@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#define FOR(a,b) for(a=0;a<b;a++)
 int order;
 int N;
 int dim;
@@ -25,16 +26,50 @@ int matrixFill()
 	    }
 	}
 	printf("%s\n",a);
+	free(a);
 	if(!(i == dim-1 && j == dim-1))
-	{
-	    free(a);
 	    return -1;
-	}
 	return 0;
 }
 
+int checkSudoku()
+{   //Check for repetitions in rows
+    int i,j;
+    int check[dim];
+    FOR(i,dim)
+    {	FOR(j,dim)
+	{//Check and mark
+	    if(check[a[(i*dim+j) - '0']] == 0)
+		check[a[(i*dim+j)- '0']] == 1;
+	    else
+		return -1;	
+	}	
+    }
+    //Check for repetitions in columns
+    FOR(i,dim)
+    {	j = 0;
+	while(j != i + (dim-1)*dim)
+	{   if(check[a[(i*dim+j) - '0']] == 0)
+		check[a[(i*dim+j)- '0']] == 1;
+	    else
+		return -1;
+	    j +=  dim;
+	}
+    }
+}
 
 int main(void){
 	matrixFill();	
+	int i,j,k;
+	FOR(i,dim)
+	{   FOR(j,dim)
+	    {	if(a[i][j] == 0)
+		{   FOR(k,dim)
+		    {;}   
+		}
+
+	    }
+
+	}
 	return 0;
 }
