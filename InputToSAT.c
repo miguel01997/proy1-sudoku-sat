@@ -87,3 +87,39 @@ int main(void)
 	}
 	return 0;
 }
+
+
+
+/* Given an N^2 x N^2 sudoku matrix produces the clauses
+ * which guarantee that there is no more than one number
+ * per cell */
+
+int unique_clause(char* sudoku, int N){
+  int dim = N*N;
+  int cell;
+  int var_start;
+
+  for(int i=0; i<dim; i++){ // for every cell
+    for(int j=0; j<dim; j++){
+
+      cell = i*dim + j; //current cell
+
+      /* where the variable count for the current
+       * cell starts */
+      var_start = cell*dim;
+
+      /* create a clause for every possible pair of
+       * variables that refer to the cell's value */
+      for(int k=1; k<dim; k++){ 
+        for(int m=k+1; m<=dim; m++){
+          printf("%d %d 0", -(var_start+k), -(var_start+m));
+        }
+
+
+      }
+
+
+    }
+  }
+
+}
