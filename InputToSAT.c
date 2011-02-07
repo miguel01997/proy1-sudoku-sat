@@ -5,30 +5,30 @@ int order;
 int N;
 int dim;
 int V,C,UC;
-char* a;
+unsigned short* a;
 
 int matrixFill()
 {	int i,j;
-	char v;
+	unsigned short v = 0;
+	char sig = ' ';
 	i = 0;
 	j = 0;
 	UC = 0;
 	scanf("%d",&order);
 	dim = order*order;
 	N = dim*dim*dim;
-	a = malloc(dim*dim*sizeof(char));
-	while( scanf("%c",&v) != EOF)
-	{   if(v == '\n') break;
-	    if(v ==' ') continue;
-	    a[i*dim + j] = v;
+	a = malloc(dim*dim*sizeof(unsigned short));
+	while( scanf("%hd%c",&v,&sig) != EOF)
+	{   a[i*dim + j] = v;
+	    if(sig == '\n') break;
 	    j += 1;
 	    if(j >= dim){
 		i += 1;
 		j = 0;
 	    }
 	}
-	if(!(i == dim && j == 0))
-	    return -1;
+	//if(!(i == dim && j == 0))
+	  //  return -1;
 	return 0;
 }
 
@@ -41,10 +41,10 @@ int checkSudoku()
 	    check[k] = 0;
 	FOR(j,dim)
 	{//Check and mark
-	    if(	a[i*dim+j] != '0' &&
-		check[a[i*dim+j] - '0'] == 0)
-		    check[a[i*dim+j]- '0'] = 1;
-	    else if( a[i*dim+j] == '0'); 
+	    if(	a[i*dim+j] != 0 &&
+		check[a[i*dim+j]] == 0)
+		    check[a[i*dim+j]] = 1;
+	    else if( a[i*dim+j] == 0); 
 	    else
 		return -1;	
 	}	
@@ -55,10 +55,10 @@ int checkSudoku()
 	    check[k] = 0;
 	FOR(j,dim)
 	{//Check and mark
-	    if(	a[j*dim+i] != '0' &&
-		check[a[j*dim+i] - '0'] == 0)
-		    check[a[j*dim+i]- '0'] = 1;
-	    else if( a[j*dim+i] == '0'); 
+	    if(	a[j*dim+i] != 0 &&
+		check[a[j*dim+i]] == 0)
+		    check[a[j*dim+i]] = 1;
+	    else if( a[j*dim+i] == 0); 
 	    else
 		return -1;	
 	}
@@ -83,14 +83,13 @@ void one_number_clause()
 {   int i,j,k;
     FOR(i,dim)
     {   FOR(j,dim)
-	{   if(a[i*dim+j] == '0')
+	{   if(a[i*dim+j] == 0)
 	    {   FOR(k,dim)
-		    printf("%d%d%d ",i+1,j+1,k+1);   
+		    printf("%d ",dim*dim*i+j*dim+(k+1)); 
 		printf("%d\n",0);
 	    }
 	    else
-		printf("%d%d%d 0\n",i+1,j+1,a[i*dim+j]-'0');
-	    
+		printf("%d 0\n",i*dim*dim+dim*j+a[i*dim+j]); 
 	}
     }
 }
@@ -110,7 +109,7 @@ void unique_number_clause()
 	* variables that refer to the cell's value */
 	for(k=1; k<dim; k++)
 	    for(m=k+1; m<=dim; m++)
-		printf("-%d%d%d -%d%d%d 0\n",i,j,k,i,j,m);
+		printf("-%d -%d 0\n",i*dim*dim+j*dim+k,i*dim*dim+j*dim+m);
 	}
     }
 }
@@ -121,7 +120,7 @@ void row_clause()
     	for(z=1;z<dim+1;z++)
 	    for(x=1;x<dim;x++)
     	    	for(i=x+1;i<dim+1;i++)
-		    printf("-%d%d%d -%d%d%d 0\n",x,y,z,i,y,z);	    
+		    printf("-%d -%d 0\n",x*dim*dim+y*dim+z,i*dim*dim+y*dim+z);	    
 }
 
 void column_clause()
@@ -130,7 +129,7 @@ void column_clause()
     	for(z=1;z<dim+1;z++)
 	    for(y=1;y<dim;y++)
     	    	for(i=y+1;i<dim+1;i++)
-		    printf("-%d%d%d -%d%d%d 0\n",x,y,z,x,i,z);	    
+		    printf("-%d -%d 0\n",x*dim*dim+y*dim+z,x*dim*dim+dim*i+z);	    
 }
 
 void subgrid_clause()
@@ -142,9 +141,9 @@ void subgrid_clause()
 		for(x=1;x<=order;x++)
 		    for(y=1;y<=order;y++)
 			for(k=y+1;k<=order;k++)
-			{   printf("-%d%d%d -%d%d%d 0\n",
-				    order*i+x,order*j+y,z,
-				    order*i+x,order*j+k,z);
+			{   printf("-%d -%d 0\n",
+				    dim*dim*(order*i+x)+dim*(order*j+y)+z,
+				    dim*dim*(order*i+x)+dim*(order*j+k)+z);
 			}
     
     for(z=1;z<dim+1;z++)
@@ -154,9 +153,9 @@ void subgrid_clause()
 		    for(y=1;y<=order;y++)
 			for(k=y+1;k<=order;k++)
 			    for(l=1;l<=order;l++)
-			    {	printf("-%d%d%d -%d%d%d 0\n",
-					order*i+x,order*j+y,z,
-					order*i+k,order*j+l,z);
+			    {	printf("-%d -%d 0\n",
+					dim*dim*(order*i+x)+dim*(order*j+y)+z,
+					dim*dim*(order*i+k)+dim*(order*j+l)+z);
 			    }	
 }
 
