@@ -4,7 +4,7 @@ CFLAGS = -g
 all : SudokuSATSolver
 
 
-InputToSAT.o: InputToSAT.c bitvector.h 
+InputToSAT.o: InputToSAT.c 
 	$(CC) $(CFLAGS) -c InputToSAT.c
 	
 SudokuSATSolver : InputToSAT.o 
