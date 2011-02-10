@@ -56,34 +56,54 @@ int updateVariableArray(rarray_clause* W,clause* n)
     clause clause_array[C+1];
     variable variable_array[V+1];
     int v;
+    int i;
     int I;
     clause* n;
-    I = 0;
+    if((n = malloc(sizeof(clause))) == NULL)
+    {	printf("Out of heap memory.\n");
+	return -1;
+    }
+    I = 1;
     n->literals.array = NULL;
     n->literals.size = 0;
     //Variable array is initialized by default.
     //Clause construction.
+     
     while(scanf("%d",&v) != EOF)
     {	if(v == 0) 
 	{   //Actualize variable array.
+	    
 	    int w1 = n->literals.array[0];
 	    int w2 = n->literals.array[n->literals.size-1];
+
+	    n->w_1_i = w1;
+	    n->w_2_i = w2;	    	
+
 	    if(w1 > 0)
-		if(updateVariableArray(&variable_array[w1].pW,n) == -1)
+	    {	if(updateVariableArray(&variable_array[w1].pW,n) == -1)
 		    return -1;
+	    }
 	    else
-		if(updateVariableArray(&variable_array[-w1].nW,n) == -1)
+	    {	if(updateVariableArray(&variable_array[-w1].nW,n) == -1)
 		    return -1;
+	    }
 	    if(w2 > 0)
-		if(updateVariableArray(&variable_array[w2].pW,n) == -1)
+	    {	if(updateVariableArray(&variable_array[w2].pW,n) == -1)
 		    return -1;
+	    }
 	    else
-		if(updateVariableArray(&variable_array[-w2].nW,n) == -1)
+	    {	if(updateVariableArray(&variable_array[-w2].nW,n) == -1)
 		    return -1;
+	    }
 	    //insert clause into array. Start new clause.
+	    
 	    clause_array[I] = *n;
 	    I++;
 	    clause* p;
+	    if((p = malloc(sizeof(clause))) == NULL)
+	    {	printf("Out of heap memory\n");
+		return -1;
+	    }	
 	    p->w_1_i = 0;
 	    p->w_2_i = 0;
 	    p->literals.array = NULL;
@@ -103,9 +123,23 @@ int updateVariableArray(rarray_clause* W,clause* n)
 	    }
 	    n->literals.array = _tmp;
 	    n->literals.array[n->literals.size-1] = v;
+
 	}
     } 
-	
+
+int j;
+for(j=1;j<=C;j++)
+{   printf("Clause %d:\n",j);
+    printf("\tw_1_i: %d w_2_i: %d\n",clause_array[j].w_1_i,clause_array[j].w_2_i);
+    int k;
+    printf("Literals: ");
+    for(k=0;k<clause_array[j].literals.size;k++)
+	printf("%d ",clause_array[j].literals.array[k]);	
+    printf("Number of literals %d\n",clause_array[j].literals.size);
+    printf("\n");
+}	
+
+
     //create the first clause structure
     
     /*so_far = 1;          
