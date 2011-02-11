@@ -88,32 +88,47 @@ int updateVariableArray(rarray_clause* W,clause* n)
 
 	    clause n;
 	    int k;
-	    if((n.literals.array = malloc(varsize*sizeof(int))) == NULL)
+	    int w1,w2;
+
+	    if((n.literals.array = malloc(varcount*sizeof(int))) 
+				   == NULL)
 	    {	printf("Out of memory");
 		return -1;
 	    }
 	    
-	    n.
-	    for(k = 0;k<varsize;k++)
+	    n.literals.size = varcount;
+	    for(k = 0;k<varcount;k++)
 		n.literals.array[k] = buffer_variables[k];
+	    n.w_1_i = 0;
+	    n.w_2_i = varcount - 1;
 
-	    
-	    if(w1 > 0)
-	    {	if(updateVariableArray(&variable_array[w1].pW,n) == -1)
+	    w1 = n.literals.array[n.w_1_i];
+            w2 = n.literals.array[n.w_2_i];
+
+	    if( w1 > 0)
+	    {	if(updateVariableArray(&variable_array[w1].pW,
+				       &n) == -1)
 		    return -1;
 	    }
 	    else
-	    {	if(updateVariableArray(&variable_array[-w1].nW,n) == -1)
+	    {	if(updateVariableArray(&variable_array[-w1].nW,
+				       &n) == -1)
 		    return -1;
 	    }
 	    if(w2 > 0)
-	    {	if(updateVariableArray(&variable_array[w2].pW,n) == -1)
+	    {	if(updateVariableArray(&variable_array[w2].pW,
+				       &n) == -1)
 		    return -1;
 	    }
 	    else
-	    {	if(updateVariableArray(&variable_array[-w2].nW,n) == -1)
+	    {	if(updateVariableArray(&variable_array[-w2].nW,
+				       &n) == -1)
 		    return -1;
 	    }
+
+	    clause_array[I] = n;    
+	    varcount = 0;
+	    I++;
 	    //insert clause into array. Start new clause.
 	    
 	    /*clause_array[I] = *n;
@@ -151,7 +166,7 @@ int updateVariableArray(rarray_clause* W,clause* n)
 	//printf("%d %d %d\n",I,clause_array[2].literals.size,clause_array[2640].literals.size);
     } 
     
-    /*
+    
     int j;
     for(j=1;j<=C;j++)
     {   printf("Clause %d:\n",j);
@@ -163,7 +178,7 @@ int updateVariableArray(rarray_clause* W,clause* n)
 	printf("Number of literals %d\n",clause_array[j].literals.size);
 	printf("\n");
     }	
-    */
+    
     //create the first clause structure
     
     /*so_far = 1;          
