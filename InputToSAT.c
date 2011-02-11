@@ -100,14 +100,14 @@ void one_number_clause()
 void unique_number_clause()
 {   int i,j,k,m;
 
-    for(i=1;i<=dim;i++)
+    for(i=0;i<dim;i++)
     { // for every cell
-	for(j=1;j<=dim;j++)
+	for(j=0;j<dim;j++)
 	{/* where the variable count for the current
 	* cell starts */
 	/* create a clause for every possible pair of
 	* variables that refer to the cell's value */
-	for(k=1; k<dim; k++)
+	  for(k=1; k<dim; k++)
 	    for(m=k+1; m<=dim; m++)
 		printf("-%d -%d 0\n",i*dim*dim+j*dim+k,i*dim*dim+j*dim+m);
 	}
@@ -116,19 +116,19 @@ void unique_number_clause()
 
 void row_clause()
 {   int y,z,x,i;
-    for(y=1;y<dim+1;y++)
+    for(y=0;y<dim;y++)
     	for(z=1;z<dim+1;z++)
-	    for(x=1;x<dim;x++)
-    	    	for(i=x+1;i<dim+1;i++)
+	    for(x=0;x<dim;x++)
+    	    	for(i=x+1;i<dim;i++)
 		    printf("-%d -%d 0\n",x*dim*dim+y*dim+z,i*dim*dim+y*dim+z);	    
 }
 
 void column_clause()
 {   int y,z,x,i;
-    for(x=1;x<dim+1;x++)
+    for(x=0;x<dim;x++)
     	for(z=1;z<dim+1;z++)
-	    for(y=1;y<dim;y++)
-    	    	for(i=y+1;i<dim+1;i++)
+	    for(y=0;y<dim;y++)
+    	    	for(i=y+1;i<dim;i++)
 		    printf("-%d -%d 0\n",x*dim*dim+y*dim+z,x*dim*dim+dim*i+z);	    
 }
 
@@ -138,9 +138,9 @@ void subgrid_clause()
     for(z=1;z<dim+1;z++)
 	for(i=0;i<order;i++)
 	    for(j=0;j<order;j++)
-		for(x=1;x<=order;x++)
-		    for(y=1;y<=order;y++)
-			for(k=y+1;k<=order;k++)
+		for(x=0;x<order;x++)
+		    for(y=0;y<order;y++)
+			for(k=y+1;k<order;k++)
 			{   printf("-%d -%d 0\n",
 				    dim*dim*(order*i+x)+dim*(order*j+y)+z,
 				    dim*dim*(order*i+x)+dim*(order*j+k)+z);
@@ -149,10 +149,10 @@ void subgrid_clause()
     for(z=1;z<dim+1;z++)
 	for(i=0;i<order;i++)
 	    for(j=0;j<order;j++)
-		for(x=1;x<=order;x++)
-		    for(y=1;y<=order;y++)
-			for(k=y+1;k<=order;k++)
-			    for(l=1;l<=order;l++)
+		for(x=0;x<order;x++)
+		    for(y=0;y<order;y++)
+			for(k=y+1;k<order;k++)
+			    for(l=0;l<order;l++)
 			    {	printf("-%d -%d 0\n",
 					dim*dim*(order*i+x)+dim*(order*j+y)+z,
 					dim*dim*(order*i+k)+dim*(order*j+l)+z);
@@ -171,9 +171,13 @@ int main(void)
 	}
 	problem_line();	
 	one_number_clause();
+
 	unique_number_clause();
+
 	row_clause();
+
 	column_clause();
+
 	subgrid_clause();
 	return 0;
 }
