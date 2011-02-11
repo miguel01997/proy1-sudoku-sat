@@ -32,7 +32,7 @@ int pureLiteral(clause* clause_array,int carray_size)
 {	int i,j,k,l,m,p;
 	int not_pure;
 	//Grab a clause
-	for(i=1;i<clause_array[i];i++)
+	for(i=1;i<carray_size;i++)
 	{//Grab a literal
 		int size_clause_i = clause_array[i].literals.size;
 		for(j=0;j<size_clause_i;j++)
@@ -53,4 +53,12 @@ int pureLiteral(clause* clause_array,int carray_size)
 		}
 	}
 	return 0;
+}
+
+int DPLL(int* M, clause* clause_array,int carray_size)
+{	if(satisfiable(M,clause_array,carray_size) > 0)
+		return 1;
+	if(satisfiable(M,clause_array,carray_size) == 0)
+		return 0;
+	if(unitClause(clause_array,carray_size))	
 }
