@@ -179,6 +179,6 @@ int main(void)
 
 	column_clause();
 
-	//	subgrid_clause();
+	subgrid_clause();
 	return 0;
 }
