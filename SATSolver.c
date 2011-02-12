@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define MAX_LINE_LENGTH 65536
 
 typedef struct{
 	int* array;
@@ -41,9 +40,106 @@ int updateVariableArray(rarray_clause* W,clause* n)
     return 0;
 }
 
- int main(void){
+int satisfiable(clause* clause_array,variable* variable_array,
+		int carray_size)
+{	int i,j;
+	int true_count;
+	int false_count;
+	true_count = 0;
+	false_count = 0;
+	for(i=1;i<=carray_size;i++)
+	{	clause c = clause_array[i];
+		false_count = 0;
+		for(j=0;j<c.literals.size;j++)
+		{   if(variable_array[c.literals.array[j]].state == 0)
+			false_count += 1;   			
+		    //At least one variable is true
+		    if(variable_array[c.literals.array[j]].state == 1)
+			break;
+		}
+		if(j < c.literals.size)
+		    true_count += 1;
+		//one clause is completely false
+		if(false_count == c.literals.size)
+		    return 0;		
+	}
+	if(true_count == carray_size)
+	    return 1;
+
+	return -1;
+}
+
+//Returns the first unit clause.If no unit 
+//clause is found, return 0.
+int unitClause(clause* clause_array,int carray_size)
+{	int i;
+	for(i=1;i<=carray_size;i++)
+	{	if(clause_array[i].w_1_i == clause[i].w_2_i)
+			return clause_array[i].literals.array[w_1_i];	
+	}
+	return 0;
+}
 
 
+//Returns first literal(variable) if it is pure.
+//If no pure literal is found, zero is returned.
+int pureLiteral(clause* clause_array,int carray_size)
+{	int i,j,k,l,m,p;
+	int not_pure;
+	//Grab a clause
+	for(i=1;i<carray_size;i++)
+	{//Grab a literal
+		int size_clause_i = clause_array[i].literals.size;
+		for(j=0;j<size_clause_i;j++)
+		{	not_pure = 0;
+			l = clause_array[i].literals.array[j];
+			//Compare with other clauses
+			for(k=i+1;k<carray_size;k++)
+			{//Grab another literal from another clause
+				int size_clause_k = clause.array[k].literals.size;
+				for(m=0;m<size_clause_k;m++)
+				{	p = clause_array[k].literals.array[m];
+					if(p == -l)
+						not_pure = 1;
+				}
+			}
+			if(not_pure == 0)
+				return p;
+		}
+	}
+	return 0;
+}
+
+int unitPropagate(clause* clause_array, int carray_size,
+		    int unit_clause,variable* variable_array)
+{   int i,j;
+    if(unit_clause > 0)
+    {	variable_array[unit_clause].state = 1;
+	for(i=0;i<variable_array[unit_clause].nW.size) 
+	{   clause* c = variable_array[unit_clause].nW.array[i];
+	    for(j=0;j<c->literals.size;j++)
+	    {	if(variable_array[c->literals.array[j]].state == 1)
+		    return 1;	
+	    }
+	}
+    }
+    else
+	variable_array[unit_clause].state = 0;
+   
+    int i,j;
+}
+int DPLL(clause* clause_array,int carray_size)
+{	int unit_clause;
+	if(satisfiable(clause_array,carray_size) > 0)
+		return 1;
+	if(satisfiable(clause_array,carray_size) == 0)
+		return 0;
+	unit_clause = unitClause(clause_array,carray_size);
+	if(unit_clause > 0)
+	    unitPropagate(clause_array,carray_size,unit_clause);
+}
+
+int main(void){
 
     int V,C;
     scanf("p cnf %d%d",&V,&C);
