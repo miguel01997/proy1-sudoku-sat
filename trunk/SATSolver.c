@@ -19,6 +19,7 @@ typedef struct{
 } rarray_clause;
 
 typedef struct{
+    short state;
     rarray_clause pW;
     rarray_clause nW;
 } variable;
