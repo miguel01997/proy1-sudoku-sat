@@ -76,7 +76,7 @@ int unitClause(clause** clause_array,int carray_size)
 {	int i;
 	for(i=1;i<=carray_size;i++)
 	{	if(clause_array[i]->w_1_i == clause_array[i]->w_2_i)
-			return clause_array[i]->literals.array[w_1_i];	
+			return clause_array[i]->literals.array[clause_array[i]->w_1_i];	
 	}
 	return 0;
 }
@@ -97,7 +97,7 @@ int pureLiteral(clause** clause_array,int carray_size)
 			//Compare with other clauses
 			for(k=i+1;k<carray_size;k++)
 			{//Grab another literal from another clause
-				int size_clause_k = clause.array[k]->literals.size;
+				int size_clause_k = clause_array[k]->literals.size;
 				for(m=0;m<size_clause_k;m++)
 				{	p = clause_array[k]->literals.array[m];
 					if(p == -l)
@@ -125,7 +125,7 @@ int unitPropagate(int unit_clause,variable* variable_array)
     }
 
     variable_array[unit_clause].state = v;
-    for(i=0;i<list->size) 
+    for(i=0;i<list->size;i++) 
     {   clause* c = list->array[i];
 	false_count = 0;
 	for(j=0;j<c->literals.size;j++)
@@ -135,25 +135,23 @@ int unitPropagate(int unit_clause,variable* variable_array)
 		&& j != c->w_1_i && j != c-> w_2_i)
 	    {   //w_1_i is the watched literal
 	    if(c->literals.array[c->w_1_i] ==  unit_clause)
-		list->array->w_1_i = j;
+		c->w_1_i = j;
 	    else
-		list->array->w_2_i = j;
+		c->w_2_i = j;
 		break;
 	    }
-	    if(variable_array[c->literals.array[j]] == 0)
+	    if(variable_array[c->literals.array[j]].state == 0)
 		false_count++;	
 	}
 	//w_2_i is pointing to a unit clause.
 	if(false_count == c->literals.size - 1
-		&& variable_array[c->literals.array[w_2_i]] == -1)
-	{   unitPropagate(clause_array, carray_size,
-	    c->literals.array[w_2_i],variable_array);
+		&& variable_array[c->literals.array[c->w_2_i]].state == -1)
+	{   unitPropagate(c->literals.array[c->w_2_i],variable_array);
 	}
 	//w_1_i is pointing to a unit clause
 	if(false_count == c->literals.size - 1
-	    && variable_array[c->literals.array[w_1_i]] == -1)
-	{   unitPropagate(clause_array, carray_size,
-	    c->literals.array[w_1_i],variable_array);
+	    && variable_array[c->literals.array[c->w_1_i]].state == -1)
+	{   unitPropagate(c->literals.array[c->w_1_i],variable_array);
 	}
     }
 }
@@ -174,18 +172,16 @@ int chooseNextLiteral(variable* variable_array,
 }
     
 int DPLL(clause** clause_array,int carray_size,
-	variable* variable_array,int hint)
+	variable* variable_array,int varray_size,int hint)
 {	int unit_clause,pure_literal,i;
-	if(satisfiable(clause_array,carray_size) > 0)
+	if(satisfiable(clause_array,variable_array,carray_size) > 0)
 		return 1;
-	if(satisfiable(clause_array,carray_size) == 0)	
+	if(satisfiable(clause_array,variable_array,carray_size) == 0)	
 	    return 0;
 	
-	unit_clause = unitClause(clause_array,carray_size,
-		    variable_array);
+	unit_clause = unitClause(clause_array,carray_size);
 	while(unit_clause != 0)
-	{   unitPropagate(clause_array,carray_size,
-			unit_clause,variable_array);
+	{   unitPropagate(unit_clause,variable_array);
 	    unit_clause = unitClause(clause_array,carray_size);
 	}
 	pure_literal = pureLiteral(clause_array,carray_size);
@@ -193,13 +189,13 @@ int DPLL(clause** clause_array,int carray_size,
 	{   pureLiteralAssign(variable_array,pure_literal);
 	    pure_literal = pureLiteral(clause_array,carray_size);
 	}
-	i = chooseNextLiteral(variable_array, varray_size);
+	i = chooseNextLiteral(variable_array,varray_size,hint);
 	variable_array[i].state = 1;
-	if(DPLL(clause_array,carray_size,variable_array,i) == 1)
+	if(DPLL(clause_array,carray_size,variable_array,varray_size,i) == 1)
 	    return 1;
 	else
 	{   variable_array[i].state = 0;
-	    return DPLL(clause_array,carray_size,variable_array,i);
+	    return DPLL(clause_array,carray_size,variable_array,varray_size,i);
 	}
 }
 
@@ -222,6 +218,7 @@ int main(void){
       variable_array[k].nW.array = 0;
       variable_array[k].pW.size = 0;
       variable_array[k].nW.size = 0;
+      variable_array[k].state = -1;
     }
 
     I = 1;
@@ -289,7 +286,7 @@ int main(void){
     } 
     
     
-    int j;
+    /*int j;
     for(j=1;j<=C;j++)
     {   printf("Clause %d:\n",j);
 	printf("\tw_1_i: %d w_2_i: %d\n",clause_array[j]->w_1_i,clause_array[j]->w_2_i);
@@ -299,7 +296,9 @@ int main(void){
 	    printf("%d ",clause_array[j]->literals.array[k]);	
 	printf("Number of literals %d\n",clause_array[j]->literals.size);
 	printf("\n");
-    }
+    }*/
+
+    printf("%d\n",DPLL(clause_array,C,variable_array,V,0)); 
     return 0;
  }
 
