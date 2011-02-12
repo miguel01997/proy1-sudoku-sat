@@ -46,23 +46,36 @@ int satisfiable(clause** clause_array,variable* variable_array,
 {	int i,j;
 	int true_count;
 	int false_count;
+	int var_pos;
 	true_count = 0;
 	false_count = 0;
 	for(i=1;i<=carray_size;i++)
 	{	clause* c = clause_array[i];
 		false_count = 0;
 		for(j=0;j<c->literals.size;j++)
-		{   if(variable_array[c->literals.array[j]].state == 0)
-			false_count += 1;   			
+		{   if(c->literals.array[j] < 0)
+			var_pos = -c->literals.array[j];
+		    else
+			var_pos = c->literals.array[j];	
+		    if(variable_array[var_pos].state == 0 
+			&& c->literals.array[j] > 0)
+			    false_count += 1;   			
+		    if(variable_array[var_pos].state == 1 
+			&& c->literals.array[j] < 0)
+			    false_count += 1;    
 		    //At least one variable is true
-		    if(variable_array[c->literals.array[j]].state == 1)
+		    if(variable_array[var_pos].state == 1
+			&& c->literals.array[j] > 0)
+			break;
+		    if(variable_array[var_pos].state == 0
+			&& c->literals.array[j] < 0)
 			break;
 		}
 		if(j < c->literals.size)
 		    true_count += 1;
 		//one clause is completely false
 		if(false_count == c->literals.size)
-		    return 0;		
+		    return 0;
 	}
 	if(true_count == carray_size)
 	    return 1;
@@ -129,8 +142,8 @@ int unitPropagate(int unit_clause,variable* variable_array)
     {   clause* c = list->array[i];
 	false_count = 0;
 	for(j=0;j<c->literals.size;j++)
-	{   if(variable_array[c->literals.array[j]].state == 1)
-		return 1;	
+	{   if(variable_array[c->literals.array[j]].state == 1);
+
 	    if(variable_array[c->literals.array[j]].state == -1
 		&& j != c->w_1_i && j != c-> w_2_i)
 	    {   //w_1_i is the watched literal
@@ -143,6 +156,8 @@ int unitPropagate(int unit_clause,variable* variable_array)
 	    if(variable_array[c->literals.array[j]].state == 0)
 		false_count++;	
 	}
+	if(false_count == c->literals.size)
+	    return 0;
 	//w_2_i is pointing to a unit clause.
 	if(false_count == c->literals.size - 1
 		&& variable_array[c->literals.array[c->w_2_i]].state == -1)
@@ -154,6 +169,7 @@ int unitPropagate(int unit_clause,variable* variable_array)
 	{   unitPropagate(c->literals.array[c->w_1_i],variable_array);
 	}
     }
+    return 1;
 }
 
 int pureLiteralAssign(variable* variable_array, int literal)
@@ -178,15 +194,20 @@ int DPLL(clause** clause_array,int carray_size,
 		return 1;
 	if(satisfiable(clause_array,variable_array,carray_size) == 0)	
 	    return 0;
-	
+
 	unit_clause = unitClause(clause_array,carray_size);
+	
 	while(unit_clause != 0)
 	{   unitPropagate(unit_clause,variable_array);
 	    unit_clause = unitClause(clause_array,carray_size);
+	    printf("%d\n",unit_clause);
 	}
+	
+	printf("Hallo!\n");	
 	pure_literal = pureLiteral(clause_array,carray_size);
 	while(pure_literal != 0)
-	{   pureLiteralAssign(variable_array,pure_literal);
+	{   if(pureLiteralAssign(variable_array,pure_literal) == 0)
+		return 0;
 	    pure_literal = pureLiteral(clause_array,carray_size);
 	}
 	i = chooseNextLiteral(variable_array,varray_size,hint);
