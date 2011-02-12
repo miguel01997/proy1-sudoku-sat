@@ -138,24 +138,25 @@ void subgrid_clause()
     for(z=1;z<dim+1;z++)
 	for(i=0;i<order;i++)
 	    for(j=0;j<order;j++)
-		for(x=0;x<order;x++)
-		    for(y=0;y<order;y++)
-			for(k=y+1;k<order;k++)
+		for(x=1;x<=order;x++)
+		    for(y=1;y<=order;y++)
+			for(k=y+1;k<=order;k++)
 			{   printf("-%d -%d 0\n",
-				    dim*dim*(order*i+x)+dim*(order*j+y)+z,
-				    dim*dim*(order*i+x)+dim*(order*j+k)+z);
+				   (order*i+x-1)*dim*dim+(order*j+y-1)*dim+(z),
+				   (order*i+x-1)*dim*dim+(order*j+k-1)*dim+(z));
 			}
     
     for(z=1;z<dim+1;z++)
 	for(i=0;i<order;i++)
 	    for(j=0;j<order;j++)
-		for(x=0;x<order;x++)
-		    for(y=0;y<order;y++)
-			for(k=y+1;k<order;k++)
-			    for(l=0;l<order;l++)
+		for(x=1;x<=order;x++)
+		    for(y=1;y<=order;y++)
+			for(k=x+1;k<=order;k++)
+			    for(l=1;l<=order;l++)
 			    {	printf("-%d -%d 0\n",
-					dim*dim*(order*i+x)+dim*(order*j+y)+z,
-					dim*dim*(order*i+k)+dim*(order*j+l)+z);
+				       (order*i+x-1)*dim*dim+(order*j+y-1)*dim+z,
+				       (order*i+k-1)*dim*dim+(order*j+l-1)*dim+z);
+
 			    }	
 }
 
@@ -178,6 +179,6 @@ int main(void)
 
 	column_clause();
 
-	subgrid_clause();
+	//	subgrid_clause();
 	return 0;
 }
