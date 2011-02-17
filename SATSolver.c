@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #define ABS(a) (a>=0?a:-a)
@@ -35,6 +36,9 @@ typedef struct{
 
 decision * assign_queue;
 int index_assign_queue;
+
+
+int assigned_vars = 0;
 
 int updateVariableArray(rarray_clause* W,int index)
 {
@@ -143,11 +147,13 @@ int chooseNextLiteral(variable* variable_array,
 void printAssignments(variable* variable_array,int varray_size)
 {   int i;
   for(i=1;i <= varray_size;i++){
-      if(variable_array[i].state != -1){
-	    printf("%d state: %d ",i,variable_array[i].state);
+      if(variable_array[i].state ==0){
+        printf("-%d ", i);
+      } else {
+        printf("%d ", i);
       }
   }
-    printf("\n==================\n");
+
 }
     
 //pos is always positive.
@@ -162,19 +168,21 @@ int updateWatchedLiterals(variable* variable_array, int pos,
   else
     list = &variable_array[pos].pW;
   
+
+  //  printf("Updating %d:\n", pos);
   for(i=0;i<list->size;i++)
     {	
       if(list->array[i] == 0) 
         continue;
 
-      
+      //      printf("\tmov literals in clause: %d\n", i);
       clause* c = &clause_array[list->array[i]];
       int j;
       int fc = 0;
       int state_w1 = variable_array[ABS(c->literals.array[c->w_1_i])].state;
       flag_true = 0;	
       
-      
+
       for(j=0;j<c->literals.size;j++)
 	{   int lit = c->literals.array[j];
           int lit_abs = ABS(lit);
@@ -188,6 +196,7 @@ int updateWatchedLiterals(variable* variable_array, int pos,
 	    } 
           else if(state_lit == -1 && j != c->w_1_i && j != c->w_2_i)
             {
+              //          printf("\t\tnew centinel: %d\n", lit);
               if(state_w1 == -1)
                 c->w_2_i = j;
               else
@@ -241,8 +250,9 @@ int updateWatchedLiterals(variable* variable_array, int pos,
           assign_queue[index_assign_queue].level = level;
           index_assign_queue++;
 
+          assigned_vars++;
           if(updateWatchedLiterals(variable_array,which_watched_abs,which_val,clause_array,level) == 0)
-            {	
+            {
               return 0;   
             }
           
@@ -262,6 +272,7 @@ void undoAssignment(int level, variable* variable_array){
     if(assign_queue[i].level >= level){
       variable_array[assign_queue[i].literal].state = -1;
       index_assign_queue--;
+      assigned_vars--;
     }
     
     }
@@ -273,24 +284,33 @@ int DPLL(clause* clause_array,int carray_size,
 	int unit_clause,pure_literal,i,j;
 	int sat_res;
 
-        //printf("caca\n");
-	sat_res = satisfiable(clause_array,variable_array,carray_size); 
-	if(sat_res == 1){
-          printAssignments(variable_array,varray_size);
-          return 1;
+
+         printf("%d\n",assigned_vars);
+        //sat_res = satisfiable(clause_array,variable_array,carray_size); 
+
+	if(assigned_vars == varray_size){
+
+          if(satisfiable(clause_array, variable_array, carray_size)){
+            //            printAssignments(variable_array,varray_size);
+            return 1;
+          } else {
+            return 0;
+          }
         }
-	if(sat_res == 0){
+        //	if(sat_res == 0){
           //printf("No satisfacible\n");
-          return 0;
-        }
+          //return 0;
+        //}
 
 
 	i = chooseNextLiteral(variable_array,varray_size,hint);
-	
+
         //	printf("hint: %d\n",i);
 
+        
 	variable_array[i].state = 1;
-
+        assigned_vars++;
+        
 
 	if(updateWatchedLiterals(variable_array,i,1,clause_array, level) == 0)
           {  
@@ -304,7 +324,7 @@ int DPLL(clause* clause_array,int carray_size,
               {	variable_array[i].state = -1;
                 //  printf("Error updating wl\n");
                 //undo all assignments with level  >= than mine
-
+                assigned_vars--;
                 undoAssignment(level, variable_array);
 
                 
@@ -312,7 +332,7 @@ int DPLL(clause* clause_array,int carray_size,
               }		
             if(DPLL(clause_array,carray_size,variable_array,varray_size,i, level+1) == 0)
               {	variable_array[i].state = -1;
-                
+                assigned_vars--;
                 //undo all assignments with level >= than mine
                 undoAssignment(level, variable_array);
 		return 0;
@@ -328,13 +348,16 @@ int DPLL(clause* clause_array,int carray_size,
           undoAssignment(level, variable_array);
           if(updateWatchedLiterals(variable_array,i,0,clause_array, level) == 0)
 	    {   variable_array[i].state = -1;
+
               //undo all assignments with level >= than mine
+              assigned_vars--;
               undoAssignment(level, variable_array);
               return 0;		
 	    }
 	}
 	if(DPLL(clause_array,carray_size,variable_array,varray_size,i, level+1) == 0)
 	{   variable_array[i].state = -1;
+          assigned_vars--;
           //undo all assignments with level >= than mine
           undoAssignment(level, variable_array);
 	    return 0;
@@ -371,9 +394,9 @@ int main(void){
       
     while(scanf("%d",&v) != EOF)
       {	if(v == 0 && varcount == 1){
-          printf("Unit: %d\n", buffer_variables[0]);
           variable_array[ABS(buffer_variables[0])].state = (buffer_variables[0] > 0)? 1 : 0;
           varcount = 0;
+          assigned_vars++;
           C--;
         } else if(v==0)  
 	{   
@@ -427,7 +450,7 @@ int main(void){
 	
     } 
    
-    assign_queue = malloc(V*sizeof(decision));
+    assign_queue = malloc((V)*sizeof(decision));
     index_assign_queue = 0;
     if(assign_queue == NULL)
     {	printf("Out of memory.\n");
