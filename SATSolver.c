@@ -34,7 +34,7 @@ typedef struct{
   int level;
 } decision;
 
-decision * assign_queue;
+decision* assign_queue;
 int index_assign_queue;
 
 
@@ -136,10 +136,9 @@ int pureLiteralAssign(variable* variable_array, int literal)
 	variable_array[-literal].state = 0; 
 }
 
-int chooseNextLiteral(variable* variable_array, 
-		    int varray_size, int hint)
+int chooseNextLiteral(variable* variable_array,int varray_size)
 {   int i;
-    for(i=hint+1;i<=varray_size;i++)
+    for(i=1;i<=varray_size;i++)
 	if(variable_array[i].state == -1)
 	    return i;
 }
@@ -149,7 +148,7 @@ void printAssignments(variable* variable_array,int varray_size)
   for(i=1;i <= varray_size;i++){
       if(variable_array[i].state ==0){
         printf("-%d ", i);
-      } else {
+      } else if(variable_array[i].state == 1) {
         printf("%d ", i);
       }
   }
@@ -285,44 +284,25 @@ int DPLL(clause* clause_array,int carray_size,
 	int sat_res;
 
 
-         printf("%d\n",assigned_vars);
-        //sat_res = satisfiable(clause_array,variable_array,carray_size); 
 
-	if(assigned_vars == varray_size){
+	sat_res = satisfiable(clause_array, variable_array, carray_size);
 
-          if(satisfiable(clause_array, variable_array, carray_size)){
-            //            printAssignments(variable_array,varray_size);
+          if(sat_res == 1){
+		printAssignments(variable_array,varray_size);
             return 1;
-          } else {
+          } else if(sat_res == 0)  {
             return 0;
           }
-        }
-        //	if(sat_res == 0){
-          //printf("No satisfacible\n");
-          //return 0;
-        //}
-
-
-	i = chooseNextLiteral(variable_array,varray_size,hint);
-
-        //	printf("hint: %d\n",i);
-
-        
-	variable_array[i].state = 1;
-        assigned_vars++;
-        
-
-	if(updateWatchedLiterals(variable_array,i,1,clause_array, level) == 0)
+   
+	if(updateWatchedLiterals(variable_array,hint,1,clause_array, level) == 0)
           {  
 
-            variable_array[i].state = 0;
+            variable_array[hint].state = 0;
 
             undoAssignment(level, variable_array);
             
-            //  printf("Try with 0\n");
-            if(updateWatchedLiterals(variable_array,i,0,clause_array, level) == 0)
-              {	variable_array[i].state = -1;
-                //  printf("Error updating wl\n");
+            if(updateWatchedLiterals(variable_array,hint,0,clause_array, level) == 0)
+              {	variable_array[hint].state = -1;
                 //undo all assignments with level  >= than mine
                 assigned_vars--;
                 undoAssignment(level, variable_array);
@@ -330,8 +310,8 @@ int DPLL(clause* clause_array,int carray_size,
                 
                 return 0;
               }		
-            if(DPLL(clause_array,carray_size,variable_array,varray_size,i, level+1) == 0)
-              {	variable_array[i].state = -1;
+            if(DPLL(clause_array,carray_size,variable_array,varray_size,hint, level+1) == 0)
+              {	variable_array[hint].state = -1;
                 assigned_vars--;
                 //undo all assignments with level >= than mine
                 undoAssignment(level, variable_array);
@@ -340,6 +320,11 @@ int DPLL(clause* clause_array,int carray_size,
 	    return 1;
           }
 
+	i = chooseNextLiteral(variable_array,varray_size);
+
+	variable_array[i].state = 1;
+        assigned_vars++;
+	
 	if(DPLL(clause_array,carray_size,variable_array,varray_size,i, level+1) == 1)
 	    return 1;
 	else
@@ -457,7 +442,9 @@ int main(void){
 	return 0;
     }
 
-    printf("%d\n",DPLL(clause_array,C,variable_array,V,0,0)); 
+    variable_array[0].state = 1;
+    assigned_vars++;
+    printf("\n%d\n",DPLL(clause_array,C,variable_array,V,0,0)); 
     return 0;
 }
 
