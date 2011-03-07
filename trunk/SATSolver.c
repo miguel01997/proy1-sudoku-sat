@@ -1,29 +1,16 @@
+/**********************************************************
+
+SAT_Solver.c
+
+@author Alex Tough (07-41604)
+@author Daniel Bruzual ()
+
+************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "node_stack.h"
 #define ABS(a) (a>=0?a:-a)
-
-typedef struct{
-	int* array;
-	int size;
-} rarray_variable;
-
-typedef struct{
-    int w_1_i;
-    int w_2_i;
-    rarray_variable literals;
-} clause;
-
-typedef struct{
-    int* array;
-    int size;
-} rarray_clause;
-
-typedef struct{
-    short state;
-    rarray_clause pW;
-    rarray_clause nW;
-} variable;
 
 
 //basic block of a decision queue
@@ -155,7 +142,6 @@ void printAssignments(variable* variable_array,int varray_size)
 
 }
     
-//pos is always positive.
 int updateWatchedLiterals(variable* variable_array, int pos,
 			int v,clause* clause_array,int level)
 {   rarray_clause* list;
@@ -168,13 +154,11 @@ int updateWatchedLiterals(variable* variable_array, int pos,
     list = &variable_array[pos].pW;
   
 
-  //  printf("Updating %d:\n", pos);
   for(i=0;i<list->size;i++)
     {	
       if(list->array[i] == 0) 
         continue;
 
-      //      printf("\tmov literals in clause: %d\n", i);
       clause* c = &clause_array[list->array[i]];
       int j;
       int fc = 0;
@@ -195,7 +179,6 @@ int updateWatchedLiterals(variable* variable_array, int pos,
 	    } 
           else if(state_lit == -1 && j != c->w_1_i && j != c->w_2_i)
             {
-              //          printf("\t\tnew centinel: %d\n", lit);
               if(state_w1 == -1)
                 c->w_2_i = j;
               else
@@ -364,14 +347,16 @@ int main(void){
     int i;
     int I;
     int varcount;
-
     int k;
+
+    //Initialize variables.
     for(k = 1; k<= V; k++){
-      variable_array[k].pW.array = 0;
-      variable_array[k].nW.array = 0;
-      variable_array[k].pW.size = 0;
-      variable_array[k].nW.size = 0;
-      variable_array[k].state = -1;
+	variable_array[k].pW.array = 0;
+	variable_array[k].nW.array = 0;
+	variable_array[k].pW.size = 0;
+	variable_array[k].nW.size = 0;
+	variable_array[k].state = -1;
+	variable_array[k].toggled = 0;
     }
 
     I = 1;
@@ -388,6 +373,7 @@ int main(void){
 	    int k;
 	    int w1,w2;
 	     
+	    //Initialize clause.
 	    clause_array[I].literals.array = malloc(varcount*sizeof(int));
 	    if(clause_array[I].literals.array == NULL)
 	    {	printf("Oops!\n");
@@ -399,6 +385,7 @@ int main(void){
 		clause_array[I].literals.array[k] = buffer_variables[k];
 	    clause_array[I].w_1_i = 0;
 	    clause_array[I].w_2_i = varcount - 1;
+	    clause_array[I].tag = 0;
 
 	    w1 = clause_array[I].literals.array[clause_array[I].w_1_i];
             w2 = clause_array[I].literals.array[clause_array[I].w_2_i];
