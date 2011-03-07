@@ -25,8 +25,8 @@ void push(igraph_node x){
 	printf("Stack Overflow.\n");
 	exit(1);
     }
-    top += sizeof(igraph_node);
     *top =  x;
+    top += sizeof(igraph_node); 
 }
 
 igraph_node pop(){

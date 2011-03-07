@@ -52,10 +52,10 @@ typedef struct{
 
 //Node of implication graph.
 typedef struct{
-    //Contains name and value of the assigned variable.
-    variable* assigned_literal;
     //Decision level where the variable was assigned.
+    //-1 when the node is initialized.
     int decision_level;
     //Number of clause that implied the variable.
+    //-1 when the node is initialized.
     int implicant_clause; 
 } igraph_node;
