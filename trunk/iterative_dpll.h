@@ -1,3 +1,4 @@
+#define MAXSIZELEARNEDCLAUSE 20
 #include "node_stack.h"
 /**
   * Determina si una instancia de SAT es satisfacible mediante
@@ -16,11 +17,12 @@
 */
 
 //Nivel de decision actual
-int d,C,V;
+int d,C,V,literal_count;
 //Variable de decision actual
 variable* x;
 //Nodo de decision actual
 node decision_variable;
+clause conflict_clause;
 clause* clause_array;
 variable* variable_array;
 igraph_node* igraph;
@@ -73,6 +75,7 @@ int decide_next_branch(){
     variable_array[assigned].state = 1;
     //Crear nodo de decision
     decision_variable.variable = assigned;
+    decision_variable.toggled = 0;
     decision_variable.decision_variable = d;
     decision_variable.implied_vars.size = 0;
     decision_variable.implied_vars.array = malloc(V*sizeof(int));
@@ -91,12 +94,16 @@ int decide_next_branch(){
  * @param assigned Nodo de decision
  *
  * @return 0 En caso de conflicto
- *         1 En caso contrario
+ *         1 En caso de satisfacer la instancia
+ *        -1 En otro caso
+ *
 */
 int deduce(int assigned){
     int i,flag_true,flag_update,value_assigned;
     int j,fc,flag_true,which_val,which_watched;
-    int which_watched_abs,w1,w2;
+    int which_watched_abs,w1,w2,true_count;
+
+    true_count = 0;
 
     clause* c;
     rarray_clause* clause_list;
@@ -129,6 +136,7 @@ int deduce(int assigned){
 	    }
 	    else if((literal > 0 && state_literal == 1) || (literal < 0 && state_literal == 0)){	
 		flag_true = 1;
+		true_count += 1;
 		break;
 	    } 
 	    else if((lit > 0 && state_lit == 0) || (lit < 0 && state_lit == 1)){
@@ -154,39 +162,112 @@ int deduce(int assigned){
 	    variable_array[assigned].state = which_val;
 	    igraph[assigned].decision_level = d;
 	    igraph[assigned].implicant_clause = clause_list->array[i];
-	    nodo.implied_vars[nodo.implied_vars.size] = assigned;
-	    nodo.implied_vars.size += 1;
+	    decision_variable.implied_vars[decision_variable.implied_vars.size] = assigned;
+	    decision_variable.implied_vars.size += 1;
 	    
 	    if(deduce(assigned) == 0){
 		return 0;   
             }
-          
         }
 	else if(fc == c->literals.size && flag_true != 1){
+	    igraph[0].decision_level = d;
+	    igraph[0].implicant_clause = clause_list->array[i];
 	    return 0;
         }	
     }
-    return 1;  
+    if(true_count == clause_list->size)
+	return 1; 
+    
+    return -1; 
 }
+
+/**
+ * Calcula el nivel del backtracking (backjumping en el caso 
+ * no cronologico). Realiza aprendizaje de clausulas para limitar 
+ * el espacio de busqueda.
+ *
+ * @return Nivel de backtracking
+ *
+*/
+int analyze_conflict(){	
+    int blevel;
+    conflict_clause.tag = 0;
+    conflict_clause.w_1_i = 0;
+    conflict_clause.w_2_i = 0;
+    conflict_clause.literals.size = 0;
+    create_conflict_induced_clause(0);
+    conflict_clause.tag = (conflict_clause.literals.size 
+			    > MAXSIZELEARNEDCLAUSE ? 1:0);
+    clause_array[T] = conflict_clause;
+    T += 1;
+    blevel = compute_max_decision_level(conflict_clause);
+    erase();
+    return blevel;
+}
+
+/**
+ * Crea la clausula de conflicto buscando las raices del
+ * grafo de implicacion.
+ *
+ * @param index Indice de la variable de un nodo del grafo
+ *              de implicacion
+ *
+ * @return Clausula de conflicto
+ *
+*/
+void create_conflict_induced_clause(int index){
+    int j,k,rep_flag;
+    clause c;
+    rep_flag = 0
+    nodo m = igraph[index];
+    if(m.implicant_clause == -1){
+	for(j=0;j<conflict_clause.literals.size;j++){
+	    if(index == conflict_clause.literals[j]){
+		rep_flag = 1;
+		break;
+	    }
+	}
+	if(rep_flag != 1){
+	    conflict_clause.literals.size += 1;
+	    conflict_clause.literals.array = realloc(conflict_clause.literals.array,literal_count);
+	    if(conflict_clause.literals.array == NULL){
+		printf("Out of memory. Sorry.");
+		exit(1);
+	    }
+	}
+    }
+    else{
+	c = clause_array[n.implicant_clause];
+	for(k=0;k<c.literals.size;k++){
+	    create_conflict_induced_clause(c.literals.array[k]);
+	}	
+    }
+}
+
+
 
 /**
  * Retorna el indice de la variable en el arreglo de variables
  * que representa el nodo al cual se hizo backjumping.
  *
+ * @param blevel El nivel de backjumping escogido por analyze_conflict.
+ *
  * @return El indice de la variable
  *
 */
-int backtrack(){
+int backtrack(int blevel){
     int i;
     node n;
+    d = blevel;
     while(true){
 	n = pop();
 	for(i=0;i<n.implied_vars.size;i++){
 	    variable_array[ABS(n.implied_vars[i])].state = -1;
 	}
 	n.implied_vars.size = 0;
-	if(n.decision_level == d){
-	    variable_array[ABS(n.variable)] = -1;
+	if(n.decision_level == blevel){
+	    variable_array[ABS(n.variable)] = (variable_array[ABS(n.variable)] == 1?0:1);
+	    n.toggled = 1;
 	    push(n);
 	    break;
 	}
@@ -199,22 +280,23 @@ int backtrack(){
 int dpll (clause* c_a, variable* variable_array,
 	    igraph_node* ig, int c, int v){
 	
-	int status,blevel;
+	int status,blevel,a;
 	clause_array = c_a;
 	variable_array = v_a;
 	igraph = ig;
 	c = C;
-	v = V;`
+	v = V;
+	T = C + 1;
 	while(1){
-	    decide_next_branch();
+	    a = decide_next_branch();
 	    while(1){
-		status = deduce();
+		status = deduce(a);
 		if(status == 0){
 		    blevel = analyze_conflict();
 		    if(blevel == 0)
 			return 0;
 		    else
-			backtrack(blevel); 
+			a = backtrack(blevel); 
 		}
 		else if(status == 1)
 		    return 1;		

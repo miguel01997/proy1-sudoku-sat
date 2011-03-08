@@ -15,7 +15,10 @@ int main(void){
     igraph_node igraph[V+1];
     int buffer_variables[V]; 
 
-    //Initialize variables.
+    //Initialize conflict node
+    igraph[0].decision_level = -1;
+    igraph[0].implicant_clause = -1;
+    //Initialize variables and nodes of implication graph
     for(k = 1; k<= V; k++){
 	
 	variable_array[k].pW.array = 0;
@@ -64,22 +67,22 @@ int main(void){
 
 	    
 	    if( w1 > 0)
-		{   if(updateVariableArray(&(variable_array[w1].pW),
+		{   if(addClause(&(variable_array[w1].pW),
 				       I) == -1)
 		    return -1;
 		}
 		else
-		{   if(updateVariableArray(&(variable_array[-w1].nW),
+		{   if(addClause(&(variable_array[-w1].nW),
 				       I) == -1)
 		    return -1;
 		}
 		if(w2 > 0)
-		{	if(updateVariableArray(&(variable_array[w2].pW),
+		{	if(addClause(&(variable_array[w2].pW),
 				       I) == -1)
 			return -1;
 		}
 		else
-		{	if(updateVariableArray(&(variable_array[-w2].nW),
+		{	if(addClause(&(variable_array[-w2].nW),
 				       I) == -1)
 			return -1;
 		}
