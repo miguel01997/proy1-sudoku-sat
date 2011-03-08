@@ -38,10 +38,6 @@ typedef struct{
 
 //Variable structure
 typedef struct{
-    //Indicates whether the variable has been toggled.
-    // toggled = 1 -> true
-    // else -> false
-    int toggled;
     //Value of the variable: 0 = false; 1 = true, -1 = undetermined.
     short state;
     //List of clauses where the variable is positively watched.
@@ -54,6 +50,10 @@ typedef struct{
 typedef struct{
     //Index of variable in variable array
     int variable;
+    //Indicates whether the variable has been toggled.
+    // toggled = 1 -> true
+    // else -> false
+    int toggled;
     //Decision level associated with variable.
     int decision_level;
     //List of implied variables.
@@ -62,7 +62,7 @@ typedef struct{
 
 //Node of implication graph.
 typedef struct{
-    //Decision level where the variable was assigned.
+     //Decision level where the variable was assigned.
     //-1 when the node is initialized.
     int decision_level;
     //Number of clause that implied the variable.
