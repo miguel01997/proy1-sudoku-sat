@@ -50,6 +50,16 @@ typedef struct{
     rarray_clause nW;
 } variable;
 
+//Node of implicit backtracking graph
+typedef struct{
+    //Index of variable in variable array
+    int variable;
+    //Decision level associated with variable.
+    int decision_level;
+    //List of implied variables.
+    rarray_variable implied_vars;
+} node;
+
 //Node of implication graph.
 typedef struct{
     //Decision level where the variable was assigned.
