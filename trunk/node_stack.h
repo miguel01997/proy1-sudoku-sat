@@ -11,7 +11,7 @@ Implements stack for implication graph nodes.
 #define STACK_SIZE 100001
 
 // Last position of the stack must never be ocuppied.
-igraph_node *base,*top, stack[STACK_SIZE];
+node *base,*top, stack[STACK_SIZE];
 
 // Initializes base to point to the bottom of the stack,
 // and top to point to the first free element of the stack.
@@ -20,22 +20,22 @@ void initialize(){
     top = stack;
 }
 
-void push(igraph_node x){
+void push(node x){
     if(top == (base + STACK_SIZE)){
 	printf("Stack Overflow.\n");
 	exit(1);
     }
     *top =  x;
-    top += sizeof(igraph_node); 
+    top += sizeof(node); 
 }
 
-igraph_node pop(){
-    igraph_node t;
+node pop(){
+    node t;
     if(top == base){
 	printf("Stack Underflow.\n");
 	exit(1);
     }
-    top -= sizeof(igraph_node);
+    top -= sizeof(node);
     t = *top;
     top = NULL;
     return t;
