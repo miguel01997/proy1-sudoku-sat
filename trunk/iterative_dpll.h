@@ -41,9 +41,10 @@ igraph_node* igraph;
  *
 */
 int addClause(rarray_clause* watched_clauses,int index){
-    watched_clauses->size += 1;
+    watched_clauses->size += 1; 
     watched_clauses->array = (int*) realloc(watched_clauses->array,
 		(watched_clauses->size)*sizeof(int));
+   
     if(watched_clauses->array == NULL)
     {
 	printf("Ran out of memory.\n");
@@ -100,18 +101,18 @@ int deduce(int assigned){
     int literal, literal_state,abs_w1,abs_w2;
 
     true_count = 0;
-
-   
+ 
     clause* c;
     rarray_clause* clause_list;
    
     value_assigned = variable_array[assigned].state;
     
-    clause_list = (value_assigned == 1 ? &variable_array[assigned].nW:
-					 &variable_array[assigned].pW);
+    clause_list = (value_assigned == 1 ? &(variable_array[assigned].nW):
+					 &(variable_array[assigned].pW));
 
     for(i=0;i<clause_list->size;i++){	 
 
+	printf("a: %d\n",clause_list->array[i]);
 	if(clause_list->array[i] == 0) 
 	    continue;
 	fc = 0;
@@ -122,15 +123,19 @@ int deduce(int assigned){
 	for(k=0;k<c->literals.size;k++){
 	    literal = c->literals.array[k];
 	    literal_state = variable_array[ABS(literal)].state;
+	    //Se puede mover el literal observado.
 	    if(literal_state == -1 && k != c->w_1_i && k != c->w_2_i){
 		if(state_w1 == -1)
 		    c->w_2_i = k;
 		else
 		    c->w_1_i = k;	
-		if(literal > 0)
-		    addClause(&variable_array[ABS(literal)].pW,clause_list->array[i]);
-		else
-		    addClause(&variable_array[ABS(literal)].nW,clause_list->array[i]);
+		if(literal > 0){
+		    printf("literal: %d\n",literal);
+		    addClause(&(variable_array[ABS(literal)].pW),clause_list->array[i]);
+		}
+		else{
+		    addClause(&(variable_array[ABS(literal)].nW),clause_list->array[i]);
+		}
 		clause_list->array[i] = 0;
 		continue;
 	    }
@@ -142,6 +147,7 @@ int deduce(int assigned){
 		fc++;
             }
 	}
+	
 	
 	if(fc == c->literals.size - 1 && flag_true != 1){   
 	    w1 = c->literals.array[c->w_1_i];
@@ -156,7 +162,6 @@ int deduce(int assigned){
 		which_watched = w2;
 		assigned = abs_w2;
 	    }
-          
 	    which_val = (which_watched>0)? 1: 0;
 	    variable_array[assigned].state = which_val;
 	    igraph[assigned].decision_level = d;
