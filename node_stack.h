@@ -6,7 +6,7 @@ node_stack.h
 
 Implements stack for implication graph nodes.
 ************************************************************/
-
+#include <stdio.h>
 #include "data_structures.h"
 #define STACK_SIZE 100001
 
