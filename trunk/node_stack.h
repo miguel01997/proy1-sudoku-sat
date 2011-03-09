@@ -15,7 +15,7 @@ node *base,*top, stack[STACK_SIZE];
 
 // Initializes base to point to the bottom of the stack,
 // and top to point to the first free element of the stack.
-void initialize(){
+void initialize_stack(){
     base = stack;
     top = stack;
 }

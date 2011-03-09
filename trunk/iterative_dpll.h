@@ -77,16 +77,7 @@ int decide_next_branch(){
     if(assigned == -1)
 	return -1;
     //Asignar variable
-    variable_array[assigned].state = 1;
-    //Crear nodo de decision
-    decision_variable.variable = assigned;
-    decision_variable.decision_level = d;
-    decision_variable.implied_vars.size = 0;
-    decision_variable.implied_vars.array = malloc(V*sizeof(int));
-    if(decision_variable.implied_vars.array == NULL){
-	printf("Out of memory.Sorry.\n");
-	exit(1);
-    }
+    variable_array[assigned].state = 1; 
     //Crear nodo raiz del grafo de implicacion
     igraph[assigned].decision_level = d;
     igraph[assigned].implicant_clause = -1; 
@@ -119,7 +110,6 @@ int deduce(int assigned){
     clause_list = (value_assigned == 1 ? &variable_array[assigned].nW:
 					 &variable_array[assigned].pW);
 
-    printf("44\n");
     for(i=0;i<clause_list->size;i++){	 
 
 	if(clause_list->array[i] == 0) 
@@ -171,7 +161,7 @@ int deduce(int assigned){
 	    variable_array[assigned].state = which_val;
 	    igraph[assigned].decision_level = d;
 	    igraph[assigned].implicant_clause = clause_list->array[i];
-	    decision_variable.implied_vars.array[decision_variable.implied_vars.size] = assigned;
+	    decision_variable.implied_vars.array[decision_variable.implied_vars.size] = assigned; 
 	    decision_variable.implied_vars.size += 1;
 	    
 	    if(deduce(assigned) == 0){
@@ -184,7 +174,7 @@ int deduce(int assigned){
 	    return 0;
         }	
     }
-    
+   
     return 1; 
 }
 /**
@@ -383,7 +373,27 @@ int backtrack(int blevel){
 	    variable_array[ABS(n.variable)].state = -1;
 	}
     }
+    //Cambiar nivel de decision actual al nivel de backjumping
+    d = blevel;
     return n.variable;
+}
+
+/**
+ * Initializa el nodo decision_variable.Ocurre con cada nuevo decision.
+ *
+ * @param var Nombre de la nueva variable de decision.
+ *
+*/
+void initializeDecisionVariable(int var){
+    //Crear nodo de decision
+    decision_variable.variable = var;
+    decision_variable.decision_level = d;
+    decision_variable.implied_vars.size = 0;
+    decision_variable.implied_vars.array = malloc(V*sizeof(int));
+    if(decision_variable.implied_vars.array == NULL){
+	printf("Out of memory.Sorry.\n");
+	exit(1);
+    }
 }
 
 int dpll (){
@@ -410,18 +420,24 @@ int dpll (){
 	}*/
 	while(1){
 	    a = decide_next_branch();
+	    initializeDecisionVariable(a);
 	    if(a != -1){
 		while(deduce(a) == 0){
+		    push(decision_variable);
 		    blevel = analyze_conflict();
 		    if(blevel == 0)
 			return 0;
-		    else
+		    else{
 			a = backtrack(blevel);
+			initializeDecisionVariable(a);
+		    }
 		}
+		push(decision_variable);
 	    }
 	    else{
 		return 1;
 	    }
+	    d += 1;
 	}
 }
 
