@@ -1,4 +1,6 @@
 #define MAXSIZELEARNEDCLAUSE 20
+#define ABS(a) (a>0 ? a : -a)
+#include <stdlib.h>
 #include "node_stack.h"
 /**
   * Determina si una instancia de SAT es satisfacible mediante
@@ -17,9 +19,7 @@
 */
 
 //Nivel de decision actual
-int d,C,V,literal_count;
-//Variable de decision actual
-variable* x;
+int d,C,V,T,literal_count;
 //Nodo de decision actual
 node decision_variable;
 clause conflict_clause;
@@ -58,25 +58,29 @@ int addClause(rarray_clause* watched_clauses,int index){
  * Escoge la siguiente variable a ser asignada, la asigna
  * un valor.
  *
- * @return La posicion en la lista de variables de la
- *         variable escogida.
+ * @return -1 si no hay mas variables para escoger
+ *         La posicion en la lista de variables de la
+ *         variable escogida en caso contrario.
+ *
 */
 int decide_next_branch(){
-    int i,j,k,literal,literal_state;
+    int i,j,k,literal,literal_state,assigned;
     int state_w1;
+    assigned = -1;
     clause* c;
-    for(i=1;i<=varray_size;i++)
+    for(i=1;i<=V;i++)
 	if(variable_array[i].state == -1){
 	    assigned = i;
-	    x = &variable_array[i];
 	    break;
 	}
+    
+    if(assigned == -1)
+	return -1;
     //Asignar variable
     variable_array[assigned].state = 1;
     //Crear nodo de decision
     decision_variable.variable = assigned;
-    decision_variable.toggled = 0;
-    decision_variable.decision_variable = d;
+    decision_variable.decision_level = d;
     decision_variable.implied_vars.size = 0;
     decision_variable.implied_vars.array = malloc(V*sizeof(int));
     if(decision_variable.implied_vars.array == NULL){
@@ -85,6 +89,7 @@ int decide_next_branch(){
     }
     //Crear nodo raiz del grafo de implicacion
     igraph[assigned].decision_level = d;
+    igraph[assigned].implicant_clause = -1; 
     return assigned;
 }
 
@@ -94,22 +99,27 @@ int decide_next_branch(){
  * @param assigned Nodo de decision
  *
  * @return 0 En caso de conflicto
- *         1 En caso de satisfacer la instancia
- *        -1 En otro caso
+ *         1 En cualquier caso
  *
 */
 int deduce(int assigned){
     int i,flag_true,flag_update,value_assigned;
-    int j,fc,flag_true,which_val,which_watched;
+    int j,k,fc,state_w1,which_val,which_watched;
     int which_watched_abs,w1,w2,true_count;
+    int literal, literal_state,abs_w1,abs_w2;
 
     true_count = 0;
 
+   
     clause* c;
     rarray_clause* clause_list;
+   
     value_assigned = variable_array[assigned].state;
+    
     clause_list = (value_assigned == 1 ? &variable_array[assigned].nW:
 					 &variable_array[assigned].pW);
+
+    printf("44\n");
     for(i=0;i<clause_list->size;i++){	 
 
 	if(clause_list->array[i] == 0) 
@@ -117,7 +127,7 @@ int deduce(int assigned){
 	fc = 0;
 	flag_true = 0;
 	c = &clause_array[clause_list->array[i]];
-	state_w1 = variable_array[ABS(c->literals[c->w_1_i])].state;
+	state_w1 = variable_array[ABS(c->literals.array[c->w_1_i])].state;
 
 	for(k=0;k<c->literals.size;k++){
 	    literal = c->literals.array[k];
@@ -134,12 +144,11 @@ int deduce(int assigned){
 		clause_list->array[i] = 0;
 		continue;
 	    }
-	    else if((literal > 0 && state_literal == 1) || (literal < 0 && state_literal == 0)){	
+	    else if((literal > 0 && literal_state == 1) || (literal < 0 && literal_state == 0)){	
 		flag_true = 1;
-		true_count += 1;
 		break;
 	    } 
-	    else if((lit > 0 && state_lit == 0) || (lit < 0 && state_lit == 1)){
+	    else if((literal > 0 && literal_state == 0) || (literal < 0 && literal_state == 1)){
 		fc++;
             }
 	}
@@ -162,7 +171,7 @@ int deduce(int assigned){
 	    variable_array[assigned].state = which_val;
 	    igraph[assigned].decision_level = d;
 	    igraph[assigned].implicant_clause = clause_list->array[i];
-	    decision_variable.implied_vars[decision_variable.implied_vars.size] = assigned;
+	    decision_variable.implied_vars.array[decision_variable.implied_vars.size] = assigned;
 	    decision_variable.implied_vars.size += 1;
 	    
 	    if(deduce(assigned) == 0){
@@ -175,11 +184,127 @@ int deduce(int assigned){
 	    return 0;
         }	
     }
-    if(true_count == clause_list->size)
-	return 1; 
     
-    return -1; 
+    return 1; 
 }
+/**
+ * Crea la clausula de conflicto buscando las raices del
+ * grafo de implicacion.
+ *
+ * @param index Indice de la variable de un nodo del grafo
+ *              de implicacion
+ *
+*/
+void create_conflict_induced_clause(int index){
+    int j,k,rep_flag;
+    clause c;
+    rep_flag = 0;
+    igraph_node m = igraph[ABS(index)];
+    if(m.implicant_clause == -1){
+	for(j=0;j<conflict_clause.literals.size;j++){
+	    if(index == conflict_clause.literals.array[j]){
+		rep_flag = 1;
+		break;
+	    }
+	}
+	if(rep_flag != 1){
+	    conflict_clause.literals.size += 1;
+	    conflict_clause.literals.array = realloc(conflict_clause.literals.array,conflict_clause.literals.size*sizeof(int));
+	    if(conflict_clause.literals.array == NULL){
+		printf("Out of memory. Sorry.");
+		exit(1);
+	    }
+	    conflict_clause.literals.array[conflict_clause.literals.size-1] = -index;
+	}
+    }
+    else {
+	c = clause_array[m.implicant_clause];
+	for(k=0;k<c.literals.size;k++){
+	    if(ABS(c.literals.array[k]) != ABS(index))
+		create_conflict_induced_clause(c.literals.array[k]);
+	}	
+    }
+}
+
+/**
+ * Calcula el nivel de backjumping (el nivel de decision mas alto 
+ * de las variables predecesoras a un conflicto), dado una clausula 
+ * de conflicto. Calcula las posiciones en la clausula de las dos
+ * variables con mayor nivel de decision. Estos seran los nuevos
+ * literales observados.
+ *
+ * @param conflict_clause Clausula de conflicto
+ *
+ * @param blevel Nivel de backjumping
+ *
+ * @param w1 Posicion de la variable con mas alto nivel de decision.
+ *
+ * @param w2 Posicion de la variable con el segundo mas alto nivel
+ *           de decision.
+ *
+*/
+void compute_max_decision_level(clause conflict_clause,int* blevel, int* w1,int* w2){
+    igraph_node p;
+    int j,q;
+    *blevel = -1;
+    *w1 = -1;
+    *w2 = -1;
+    for(j=0;j<conflict_clause.literals.size;j++){
+	p = igraph[ABS(conflict_clause.literals.array[j])];
+	if(p.decision_level >= *blevel){
+	    *w2 = *w1;
+	    *blevel = p.decision_level;
+	    *w1 = j;
+	    q = conflict_clause.literals.array[j];
+	}	
+    }
+    //Hemos llegado a la raiz del arbol y ya fue toggled.
+    if(*blevel == 1 && variable_array[q].toggled == 1){
+	*blevel = 0;
+    }
+}
+
+/**
+ * Compacta el arreglo de clausulas.
+*/
+void compaq(){
+    int i,shift;
+    shift = 0;
+    for(i=C+1;i<T;i++){
+	if(clause_array[i].literals.size == 0){
+	    shift += 1;
+	}
+	else if(shift != 0){
+	    clause_array[i] = clause_array[i+shift];
+	}
+    }
+    T -= shift;
+}
+
+/**
+ * Borra las asignaciones implicadas en el nivel actual. 
+ * Elimina clausulas aprendidas muy costosas.
+*/
+
+void erase(){
+    int j,k;
+    for(k=1;k<=V;k++){
+	if(igraph[k].decision_level == d){
+	    igraph[k].decision_level = -1;
+	    igraph[k].implicant_clause = -1;
+	}
+    }
+    for(j=C+1;j<T;j++){
+	if(clause_array[j].tag == 1){
+	    if(variable_array[clause_array[j].literals.array[clause_array[j].w_1_i]].state == -1 &&
+		variable_array[clause_array[j].literals.array[clause_array[j].w_2_i]].state == -1 ){
+		clause_array[j].literals.size = 0;
+	    }
+	}
+    }
+   compaq(); 
+}
+
 
 /**
  * Calcula el nivel del backtracking (backjumping en el caso 
@@ -190,61 +315,44 @@ int deduce(int assigned){
  *
 */
 int analyze_conflict(){	
-    int blevel;
+    int blevel,w1,w2;
+    rarray_clause* wlist1;
+    rarray_clause* wlist2;
     conflict_clause.tag = 0;
     conflict_clause.w_1_i = 0;
     conflict_clause.w_2_i = 0;
     conflict_clause.literals.size = 0;
+    conflict_clause.literals.array = NULL;
     create_conflict_induced_clause(0);
+  
     conflict_clause.tag = (conflict_clause.literals.size 
 			    > MAXSIZELEARNEDCLAUSE ? 1:0);
-    clause_array[T] = conflict_clause;
-    T += 1;
-    blevel = compute_max_decision_level(conflict_clause);
+    compute_max_decision_level(conflict_clause,&blevel,&w1,&w2);
+    
+    //Mantenimiento de literales observados
+    if(blevel = 0)
+	return 0;
+    if(conflict_clause.literals.array[w1] > 0)
+	wlist1 = &variable_array[ABS(conflict_clause.literals.array[w1])].nW;
+    else
+	wlist1 = &variable_array[ABS(conflict_clause.literals.array[w1])].pW;
+    if(conflict_clause.literals.array[w2] > 0)
+	wlist2 = &variable_array[ABS(conflict_clause.literals.array[w2])].nW;
+    else
+	wlist2 = &variable_array[ABS(conflict_clause.literals.array[w2])].pW;
+
     erase();
+    //No considerar clausulas unitarias de conflicto
+    if(conflict_clause.literals.size > 1 && T <= 2*C){
+	addClause(wlist1,T);
+	addClause(wlist2,T);
+	conflict_clause.w_1_i = w1;
+	conflict_clause.w_2_i = w2; 
+	clause_array[T] = conflict_clause;
+	T += 1;
+    }
     return blevel;
 }
-
-/**
- * Crea la clausula de conflicto buscando las raices del
- * grafo de implicacion.
- *
- * @param index Indice de la variable de un nodo del grafo
- *              de implicacion
- *
- * @return Clausula de conflicto
- *
-*/
-void create_conflict_induced_clause(int index){
-    int j,k,rep_flag;
-    clause c;
-    rep_flag = 0
-    nodo m = igraph[index];
-    if(m.implicant_clause == -1){
-	for(j=0;j<conflict_clause.literals.size;j++){
-	    if(index == conflict_clause.literals[j]){
-		rep_flag = 1;
-		break;
-	    }
-	}
-	if(rep_flag != 1){
-	    conflict_clause.literals.size += 1;
-	    conflict_clause.literals.array = realloc(conflict_clause.literals.array,literal_count);
-	    if(conflict_clause.literals.array == NULL){
-		printf("Out of memory. Sorry.");
-		exit(1);
-	    }
-	}
-    }
-    else{
-	c = clause_array[n.implicant_clause];
-	for(k=0;k<c.literals.size;k++){
-	    create_conflict_induced_clause(c.literals.array[k]);
-	}	
-    }
-}
-
-
 
 /**
  * Retorna el indice de la variable en el arreglo de variables
@@ -259,36 +367,30 @@ int backtrack(int blevel){
     int i;
     node n;
     d = blevel;
-    while(true){
+    while(1){
 	n = pop();
 	for(i=0;i<n.implied_vars.size;i++){
-	    variable_array[ABS(n.implied_vars[i])].state = -1;
+	    variable_array[ABS(n.implied_vars.array[i])].state = -1;
 	}
 	n.implied_vars.size = 0;
 	if(n.decision_level == blevel){
-	    variable_array[ABS(n.variable)] = (variable_array[ABS(n.variable)] == 1?0:1);
-	    n.toggled = 1;
+	    variable_array[ABS(n.variable)].state = (variable_array[ABS(n.variable)].state == 1?0:1);
+	    variable_array[ABS(n.variable)].toggled = 1;
 	    push(n);
-	    break;
+	    return n.variable;
 	}
 	else{
 	    variable_array[ABS(n.variable)].state = -1;
 	}
     }
+    return n.variable;
 }
 
-int dpll (clause* c_a, variable* variable_array,
-	    igraph_node* ig, int c, int v){
-	
+int dpll (){
 	int status,blevel,a;
-	clause_array = c_a;
-	variable_array = v_a;
-	igraph = ig;
-	c = C;
-	v = V;
-	T = C + 1;
-	while(1){
+	/*while(1){
 	    a = decide_next_branch();
+	    printf("root: %d\n",a);
 	    while(1){
 		status = deduce(a);
 		if(status == 0){
@@ -305,6 +407,21 @@ int dpll (clause* c_a, variable* variable_array,
 		    break;
 		}
 	    }  
+	}*/
+	while(1){
+	    a = decide_next_branch();
+	    if(a != -1){
+		while(deduce(a) == 0){
+		    blevel = analyze_conflict();
+		    if(blevel == 0)
+			return 0;
+		    else
+			a = backtrack(blevel);
+		}
+	    }
+	    else{
+		return 1;
+	    }
 	}
 }
 

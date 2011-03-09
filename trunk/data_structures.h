@@ -2,7 +2,7 @@
 data_structures.h
 
 @author Alex Tough (07-41604)
-@author Daniel Bruzual ()
+@author Daniel Bruzual (07-40681)
 
 Implements the following data structures:
     - Variable resizeable array (rarray_variable)
@@ -40,6 +40,10 @@ typedef struct{
 typedef struct{
     //Value of the variable: 0 = false; 1 = true, -1 = undetermined.
     short state;
+    //Indicates whether the variable has been toggled.
+    // toggled = 1 -> true
+    // else -> false
+    int toggled;
     //List of clauses where the variable is positively watched.
     rarray_clause pW;
     //List of clauses where the variable is negatively watched.
@@ -50,10 +54,6 @@ typedef struct{
 typedef struct{
     //Index of variable in variable array
     int variable;
-    //Indicates whether the variable has been toggled.
-    // toggled = 1 -> true
-    // else -> false
-    int toggled;
     //Decision level associated with variable.
     int decision_level;
     //List of implied variables.
