@@ -38,7 +38,7 @@ int main(void){
       
     while(scanf("%d",&v) != EOF){	
 	if(v == 0 && varcount == 1){
-	    variable_array0[ABS(buffer_variables[0])].state = ((buffer_variables[0] > 0) ? 1 : 0);
+	    variable_array0[ABS(buffer_variables[0])].state = ((buffer_variables[0] > 0) ? 3 : -3);
 	    variable_array0[ABS(buffer_variables[0])].toggled = 1;
 	    varcount = 0;
 	    C--;
@@ -105,14 +105,25 @@ int main(void){
     igraph = igraph0;
     T = C + 1;
     d = 1;
+    initialize_stack(); 
     for(s=1;s<=V;s++){
-	if(variable_array[s].state == 1 || variable_array[s].state == 0){	    
+	if(variable_array[s].state == 3 || variable_array[s].state == -3){
+	    variable_array[s].state = (variable_array[s].state == 3 ? 1 : 0);	    
+	    initializeDecisionVariable(s);
 	    solve = deduce(s);
+	    push(decision_variable);
+	    //printf("var %d\n %d\nf",decision_variable.variable,decision_variable.implied_vars.size);
+	    int g;
+	    //for(g = 0;g<decision_variable.implied_vars.size;g++){
+	//	printf("%d ",decision_variable.implied_vars.array[g]);
+	    //}
+	    //printf("\n");
 	    if(solve == 0){
 		printf("%d\n",0);
 		resolved = 1;
 		break;
 	    }
+	    free(decision_variable.implied_vars.array);
 	}
     }
     if(resolved != 1){
