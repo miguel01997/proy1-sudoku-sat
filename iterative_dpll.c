@@ -10,6 +10,9 @@ int main(void){
     int solve,resolved;
 
     scanf("p cnf %d%d",&V,&C);
+
+    d = 1;
+    int decision_levels[V+1];
     //To count from 1 to N.
     //Problem is here. Copy is not correct.
     if((clause_array = malloc((2*C+1)*sizeof(clause))) == NULL){
@@ -57,6 +60,8 @@ int main(void){
 	    C--;
 	    igraph[ABS(buffer_variables[0])].decision_level = 1;
 	    igraph[ABS(buffer_variables[0])].implicant_clause = -1;
+	    decision_levels[ABS(buffer_variables[0])] = d;
+	    d += 1;
 	    
         } else if(v==0)  
 	{   
@@ -114,16 +119,15 @@ int main(void){
     solve = 0;
     resolved = 0;
     T = C + 1;
-    d = 1;
-    initialize_stack(); 
+    
     for(s=1;s<=V;s++){
 	if(variable_array[s].state == 3 || variable_array[s].state == -3){
-	    variable_array[s].state = (variable_array[s].state == 3 ? 1 : 0);	    
+	    variable_array[s].state = (variable_array[s].state == 3 ? 1 : 0);	
+    
+	    d = decision_levels[s];     
 	    initializeDecisionVariable(s);
-	    solve = deduce(s);
-            push(decision_variable);
-	
-	    int g;
+	    solve = deduce(s);	
+	    //int g;
             /*    for(g = 0;g<decision_variable.implied_vars.size;g++){
 		printf("%d ",decision_variable.implied_vars.array[g]);
                 }*/
@@ -133,7 +137,6 @@ int main(void){
 		resolved = 1;
 		break;
 	    }
-            free(decision_variable.implied_vars.array);
 	}
     }
     //    printf("out\n");
