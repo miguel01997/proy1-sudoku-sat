@@ -1,7 +1,7 @@
 #include "iterative_dpll.h"
 int main(void){
 
-    int V,C;
+
     int v;
     int i;
     int I;
@@ -121,25 +121,25 @@ int main(void){
 	    variable_array[s].state = (variable_array[s].state == 3 ? 1 : 0);	    
 	    initializeDecisionVariable(s);
 	    solve = deduce(s);
-	    push(decision_variable);
-	    printf("var %d\n %d\nf",decision_variable.variable,decision_variable.implied_vars.size);
+            push(decision_variable);
+	
 	    int g;
-	    for(g = 0;g<decision_variable.implied_vars.size;g++){
+            /*    for(g = 0;g<decision_variable.implied_vars.size;g++){
 		printf("%d ",decision_variable.implied_vars.array[g]);
-	    }
-	    printf("\n");
+                }*/
+	
 	    if(solve == 0){
 		printf("%d\n",0);
 		resolved = 1;
 		break;
 	    }
-	    free(decision_variable.implied_vars.array);
+            free(decision_variable.implied_vars.array);
 	}
     }
-    printf("out\n");
-    /*if(resolved != 1){
-	printf("\n%d\n",dpll()); 
-    }*/
+    //    printf("out\n");
+    if(resolved != 1){
+	printf("%d\n",dpll()); 
+    }
 
     return 0;
 }

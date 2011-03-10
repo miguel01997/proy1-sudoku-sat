@@ -30,15 +30,15 @@ void push(node x){
 }
 
 node pop(){
-    node t;
+  //    node t;
     if(top == base){
 	printf("Stack Underflow.\n");
 	exit(1);
     }
     top -= sizeof(node);
-    t = *top;
-    top = NULL;
-    return t;
+    //    t = *top;
+    //    *top = NULL;
+    return *top;
 }
 
 

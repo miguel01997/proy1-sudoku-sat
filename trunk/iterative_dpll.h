@@ -112,7 +112,7 @@ int deduce(int assigned){
 
     for(i=0;i<clause_list->size;i++){	 
 
-	printf("a: %d\n",clause_list->array[i]);
+
 	if(clause_list->array[i] == 0) 
 	    continue;
 	fc = 0;
@@ -130,7 +130,7 @@ int deduce(int assigned){
 		else
 		    c->w_1_i = k;	
 		if(literal > 0){
-		    printf("literal: %d\n",literal);
+
 		    addClause(&(variable_array[ABS(literal)].pW),clause_list->array[i]);
 		}
 		else{
@@ -197,7 +197,7 @@ void create_conflict_induced_clause(int index){
     igraph_node m = igraph[ABS(index)];
     if(m.implicant_clause == -1){
 	for(j=0;j<conflict_clause.literals.size;j++){
-	    if(index == conflict_clause.literals.array[j]){
+          if(-index == conflict_clause.literals.array[j]){
 		rep_flag = 1;
 		break;
 	    }
@@ -284,20 +284,20 @@ void compaq(){
 void erase(){
     int j,k;
     for(k=1;k<=V;k++){
-	if(igraph[k].decision_level == d){
-	    igraph[k].decision_level = -1;
-	    igraph[k].implicant_clause = -1;
-	}
+      if(igraph[k].decision_level == d){
+        igraph[k].decision_level = -1;
+        igraph[k].implicant_clause = -1;
+      }
     }
     for(j=C+1;j<T;j++){
-	if(clause_array[j].tag == 1){
-	    if(variable_array[clause_array[j].literals.array[clause_array[j].w_1_i]].state == -1 &&
-		variable_array[clause_array[j].literals.array[clause_array[j].w_2_i]].state == -1 ){
-		clause_array[j].literals.size = 0;
-	    }
-	}
+      if(clause_array[j].tag == 1){
+        if(variable_array[clause_array[j].literals.array[clause_array[j].w_1_i]].state == -1 &&
+           variable_array[clause_array[j].literals.array[clause_array[j].w_2_i]].state == -1 ){
+          clause_array[j].literals.size = 0;
+        }
+      }
     }
-   compaq(); 
+    compaq(); 
 }
 
 
@@ -323,20 +323,29 @@ int analyze_conflict(){
     conflict_clause.tag = (conflict_clause.literals.size 
 			    > MAXSIZELEARNEDCLAUSE ? 1:0);
     compute_max_decision_level(conflict_clause,&blevel,&w1,&w2);
-    
+    int r;
+    printf("learned clause: ");
+    for(r = 0; r< conflict_clause.literals.size; r++){
+      printf("(%d,%d)   ",conflict_clause.literals.array[r], igraph[conflict_clause.literals.array[r]].decision_level);
+    }
+    printf("\n");
+    printf("w1:%d   w2:%d\n",w1,w2);
+    printf("blevel: %d\n", blevel);
+
     //Mantenimiento de literales observados
-    if(blevel = 0)
+    if(blevel == 0)
 	return 0;
     if(conflict_clause.literals.array[w1] > 0)
-	wlist1 = &variable_array[ABS(conflict_clause.literals.array[w1])].nW;
+      wlist1 = &(variable_array[ABS(conflict_clause.literals.array[w1])].pW);
     else
-	wlist1 = &variable_array[ABS(conflict_clause.literals.array[w1])].pW;
-    if(conflict_clause.literals.array[w2] > 0)
-	wlist2 = &variable_array[ABS(conflict_clause.literals.array[w2])].nW;
-    else
-	wlist2 = &variable_array[ABS(conflict_clause.literals.array[w2])].pW;
+      wlist1 = &(variable_array[ABS(conflict_clause.literals.array[w1])].nW);
 
-    erase();
+    if(conflict_clause.literals.array[w2] > 0)
+      wlist2 = &(variable_array[ABS(conflict_clause.literals.array[w2])].pW);
+    else
+      wlist2 = &(variable_array[ABS(conflict_clause.literals.array[w2])].nW);
+
+     erase();
     //No considerar clausulas unitarias de conflicto
     if(conflict_clause.literals.size > 1 && T <= 2*C){
 	addClause(wlist1,T);
@@ -346,6 +355,7 @@ int analyze_conflict(){
 	clause_array[T] = conflict_clause;
 	T += 1;
     }
+
     return blevel;
 }
 
@@ -361,12 +371,15 @@ int analyze_conflict(){
 int backtrack(int blevel){
     int i;
     node n;
+    //Cambiar nivel de decision actual al nivel de backjumping
     d = blevel;
+    printf("going to bt to %d\n", d);
     while(1){
-	n = pop();
+  	n = pop();
 	for(i=0;i<n.implied_vars.size;i++){
 	    variable_array[ABS(n.implied_vars.array[i])].state = -1;
 	}
+
 	n.implied_vars.size = 0;
 	if(n.decision_level == blevel){
 	    variable_array[ABS(n.variable)].state = (variable_array[ABS(n.variable)].state == 1?0:1);
@@ -378,8 +391,8 @@ int backtrack(int blevel){
 	    variable_array[ABS(n.variable)].state = -1;
 	}
     }
-    //Cambiar nivel de decision actual al nivel de backjumping
-    d = blevel;
+
+
     return n.variable;
 }
 
@@ -391,8 +404,14 @@ int backtrack(int blevel){
 */
 void initializeDecisionVariable(int var){
     //Crear nodo de decision
+  printf("teta d_l: %d   i_c: %d\n",     igraph[ABS(var)].decision_level,     igraph[ABS(var)].implicant_clause);
+  //    igraph[ABS(var)].decision_level = d;
+
+  //igraph[ABS(var)].implicant_clause = -1;
+
     decision_variable.variable = var;
     decision_variable.decision_level = d;
+    printf("var.d_l: %d\n", d);
     decision_variable.implied_vars.size = 0;
     decision_variable.implied_vars.array = malloc(V*sizeof(int));
     if(decision_variable.implied_vars.array == NULL){
@@ -423,18 +442,25 @@ int dpll (){
 		}
 	    }  
 	}*/
+
 	while(1){
 	    a = decide_next_branch();
 	    initializeDecisionVariable(a);
 	    if(a != -1){
+              printf("entro con %d\n",a);
 		while(deduce(a) == 0){
+
 		    push(decision_variable);
 		    blevel = analyze_conflict();
+
 		    if(blevel == 0)
 			return 0;
 		    else{
 			a = backtrack(blevel);
+                        printf("blevel: %d\na:%d\n",blevel,a);
+                        free(decision_variable.implied_vars.array);
 			initializeDecisionVariable(a);
+
 		    }
 		}
 		push(decision_variable);
