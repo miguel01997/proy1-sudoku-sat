@@ -85,6 +85,7 @@ int main(void){
 	    w1 = clause_array[I].literals.array[clause_array[I].w_1_i];
             w2 = clause_array[I].literals.array[clause_array[I].w_2_i];
 
+	    
 	    varcount = 0;
 
 	    
@@ -119,7 +120,23 @@ int main(void){
     solve = 0;
     resolved = 0;
     T = C + 1;
-    
+   
+    /*int g = 0;
+    for(g=1;g<=V;g++){
+	printf("Variable: %d\n",g);
+	int b;
+	printf("pW: ");
+	for(b=0;b<variable_array[g].pW.size;b++){
+	    printf("%d ",variable_array[g].pW.array[b]);
+	}
+	printf("\n");
+	printf("nw: ");
+	for(b=0;b<variable_array[g].nw.size;b++){
+	    printf("%d ",variable_array[g].nw.array[b]);
+	}
+	printf("\n");
+    }*/
+ 
     for(s=1;s<=V;s++){
 	if(variable_array[s].state == 3 || variable_array[s].state == -3){
 	    variable_array[s].state = (variable_array[s].state == 3 ? 1 : 0);	
