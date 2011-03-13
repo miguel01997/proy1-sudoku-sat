@@ -120,7 +120,8 @@ int main(void){
     solve = 0;
     resolved = 0;
     T = C + 1;
-   
+    D = d;
+     
     /*int g = 0;
     for(g=1;g<=V;g++){
 	printf("Variable: %d\n",g);
