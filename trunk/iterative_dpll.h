@@ -20,7 +20,7 @@
 */
 
 //Nivel de decision actual
-int d,C,V,T;
+int d,C,V,T,D;
 //Nodo de decision actual
 clause conflict_clause;
 clause* clause_array;
@@ -103,122 +103,94 @@ int deduce(int assigned){
 
     true_count = 0;
 
-    printf("assigned: %d\n",assigned);
 
     clause* c;
-    rarray_clause* clause_list = NULL;
+    rarray_clause* clause_list;
    
     value_assigned = variable_array[assigned].state;
 
-	printf("Variable: %d\n",assigned);
-	int b;
-	printf("pW: ");
-	for(b=0;b<variable_array[assigned].pW.size;b++){
-	    printf("%d ",variable_array[assigned].pW.array[b]);
-	}
-	printf("\n");
-	printf("nW: ");
-	for(b=0;b<variable_array[assigned].nW.size;b++){
-	    printf("%d ",variable_array[assigned].nW.array[b]);
-	}
-	printf("\n");
- 
-	if(value_assigned == 1){
-	    printf("KKK\n");
-	    clause_list = &variable_array[assigned].nW;
-	}
-	else{
-	    printf("PPP\n");
-	    clause_list = &variable_array[assigned].pW;
+    if(value_assigned == 1){
+	clause_list = &variable_array[assigned].nW;
+    }
+    else{
+	clause_list = &variable_array[assigned].pW;
+    }
+
+    for(i=0 ; i < clause_list->size ; i++){
+
+	if(clause_list->array[i] == 0) 
+	    continue;
+	fc = 0;
+	flag_true = 0;
+	c = &clause_array[clause_list->array[i]];
+	state_w1 = variable_array[ABS(c->literals.array[c->w_1_i])].state;
+	int new_watched_literal = -1;
+
+	for(k=0;k<c->literals.size;k++){
+	    literal = c->literals.array[k];
+	    literal_state = variable_array[ABS(literal)].state;
+	    //la clausula se cumple.
+	    if((literal > 0 && literal_state == 1) || (literal < 0 && literal_state == 0)){	
+		flag_true = 1;
+		break;
+	    }
 	}
 
-	printf("clause_list,size: %d\n",clause_list->size);
-	for(b = 0;b< clause_list->size;b++){
-	    printf("%d ",clause_list->array[b]);
-	}
-	printf("\n");
-	
-	printf("CS: %d\n",clause_list->size);
-	
-	for(i=0 ; i < clause_list->size ; i++){
-	   
-	    printf("in\n");
-	    printf("cs: %d\n",clause_list->size);
-	    if(clause_list->array[i] == 0) 
-		continue;
-	    fc = 0;
-	    flag_true = 0;
-	    c = &clause_array[clause_list->array[i]];
-	    state_w1 = variable_array[abs(c->literals.array[c->w_1_i])].state;
-	    int new_watched_literal = -1;
-
+	if(flag_true != 1 ){
 	    for(k=0;k<c->literals.size;k++){
 		literal = c->literals.array[k];
-		literal_state = variable_array[abs(literal)].state;
-		printf("(%d,%d)\n",literal,literal_state);
-		//la clausula se cumple.
-		if((literal > 0 && literal_state == 1) || (literal < 0 && literal_state == 0)){	
-		    flag_true = 1;
+		literal_state = variable_array[ABS(literal)].state;
+		//se puede mover el literal observado.
+		if(literal_state == -1 && k != c->w_1_i && k != c->w_2_i){
+		    new_watched_literal = k;
 		    break;
 		}
-	    }
-
-	    if(flag_true != 1 ){
-		for(k=0;k<c->literals.size;k++){
-		    literal = c->literals.array[k];
-		    literal_state = variable_array[abs(literal)].state;
-		    //se puede mover el literal observado.
-		    if(literal_state == -1 && k != c->w_1_i && k != c->w_2_i){
-			new_watched_literal = k;
-			break;
-		    }
-		    //llevar la cuenta del numero de literales que falsos
-		    else if((literal > 0 && literal_state == 0) || (literal < 0 && literal_state == 1)){
-			fc++;
-		    }
+		//llevar la cuenta del numero de literales que falsos
+		else if((literal > 0 && literal_state == 0) || (literal < 0 && literal_state == 1)){
+		    fc++;
 		}
 	    }
-	    //clausula unitaria, puesto que todos los literales son falsos,
-	    //salvo por uno, que es no asignado
-	    if(fc == c->literals.size - 1 && flag_true != 1){   
-		w1 = c->literals.array[c->w_1_i];
-		w2 = c->literals.array[c->w_2_i];
-		abs_w1 = abs(w1);
-		abs_w2 = abs(w2);
+	}
+	//clausula unitaria, puesto que todos los literales son falsos,
+	//salvo por uno, que es no asignado
+	if(fc == c->literals.size - 1 && flag_true != 1){   
+	    w1 = c->literals.array[c->w_1_i];
+	    w2 = c->literals.array[c->w_2_i];
+	    abs_w1 = ABS(w1);
+	    abs_w2 = ABS(w2);
 
 
-		int org_assigned = assigned;
-		//revisa cual es el centinela libre, esa es la variable implicada
-		if(state_w1 == -1){
-		    which_watched = w1;
-		    assigned = abs_w1;
-		} else {
-		    which_watched = w2;
-		    assigned = abs_w2;
-		}
-
-		//que valor hay que asignarle para satisfacer la clausula
-		which_val = (which_watched>0)? 1: 0;
-
-		variable_array[assigned].state = which_val;
-		igraph[assigned].decision_level = d;
-		igraph[assigned].implicant_clause = clause_list->array[i];
-
-		printf("(source,deduced,value_deduced) : (%d,%d,%d)\n", org_assigned, assigned,variable_array[assigned].state);
-		//continuar el bcp
-		if(deduce(assigned) == 0){
-		    return 0;   
-		}
+	    int org_assigned = assigned;
+	    //revisa cual es el centinela libre, esa es la variable implicada
+	    if(state_w1 == -1){
+		which_watched = w1;
+		assigned = abs_w1;
+	    } else {
+		which_watched = w2;
+		assigned = abs_w2;
 	    }
-	    //todos los literales en la clausula son falsos
-	    //hay un conflicto
-	    else if(fc == c->literals.size){
-		igraph[0].decision_level = d;
-		igraph[0].implicant_clause = clause_list->array[i];
-		return 0;
-	    }   
-	} 
-	return 1; 	 	
+
+	    //que valor hay que asignarle para satisfacer la clausula
+	    which_val = (which_watched>0)? 1: 0;
+
+	    variable_array[assigned].state = which_val;
+	    igraph[assigned].decision_level = d;
+	    igraph[assigned].implicant_clause = clause_list->array[i];
+
+	    //continuar el bcp
+	    if(deduce(assigned) == 0){
+		return 0;   
+	    }
+	}
+	//todos los literales en la clausula son falsos
+	//hay un conflicto
+	else if(fc == c->literals.size){
+	    igraph[0].decision_level = d;
+	    igraph[0].implicant_clause = clause_list->array[i];
+	    return 0;
+	}   
+    }
+    return 1; 	 	
 }
 
 
@@ -236,8 +208,9 @@ void create_conflict_induced_clause(int index){
     rep_flag = 0;
     igraph_node m = igraph[ABS(index)];
     if(m.implicant_clause == -1){
+	printf("(Index,toggled,ic_clause,decision_level): (%d,%d,%d,%d)\n",index,variable_array[ABS(index)].toggled,igraph[ABS(index)].implicant_clause,igraph[ABS(index)].decision_level);
 	for(j=0;j<conflict_clause.literals.size;j++){
-	    if(-index == conflict_clause.literals.array[j] || index == conflict_clause.literals.array[j]){
+	    if(ABS(index) == ABS(conflict_clause.literals.array[j])){
 		rep_flag = 1;
 		break;
 	    }
@@ -249,7 +222,12 @@ void create_conflict_induced_clause(int index){
 		printf("Out of memory. Sorry.");
 		exit(1);
 	    }
-	    conflict_clause.literals.array[conflict_clause.literals.size-1] = -index;
+	    if(variable_array[ABS(index)].state == 0){
+		conflict_clause.literals.array[conflict_clause.literals.size-1] = ABS(index);
+	    }
+	    else if(variable_array[ABS(index)].state == 1){
+		conflict_clause.literals.array[conflict_clause.literals.size-1] = -ABS(index);	
+	    }
 	}
     }
     else {
@@ -301,8 +279,8 @@ void compute_max_decision_level(clause conflict_clause,int* blevel, int* w1,int*
 	    *w2 = j;
 	}	
     }
-    //Hemos llegado a la raiz del arbol y ya fue toggled.
-    if(*blevel == 1 && variable_array[q].toggled == 1){
+    //Hemos llegado a la raiz del arbol preprocesada y ya fue toggled.
+    if(*blevel < D ){
 	*blevel = 0;
     }
 }
@@ -400,6 +378,10 @@ int analyze_conflict(){
 	wlist2 = &(variable_array[ABS(conflict_clause.literals.array[w2])].nW);
 
     //No considerar clausulas unitarias de conflicto
+
+    if(conflict_clause.literals.size == 1){
+	printf("HEYYYYYYYYYYY!\n");
+    }
     if(conflict_clause.literals.size > 1 && T <= 2*C){
 	addClause(wlist1,T);
 	addClause(wlist2,T);
@@ -489,7 +471,7 @@ int backtrack(int blevel){
 		//de conflicto (deducido automaticamente por deduce()).
 		//Vamos a probar el manejo explicito de los FDAs.
 		//En este caso, clausulas marcadas de rojo no seran eliminados.
-		igraph[i].implicant_clause = T-1;
+		igraph[i].implicant_clause = -2;
 		variable_array[i].state = (variable_array[i].state == 1 ? 0 : 1);
 		return i;
 	    }
@@ -516,7 +498,7 @@ int backtrack(int blevel){
 	for(i = 1; i<= V;i++){
 	    if(igraph[i].decision_level == blevel && igraph[i].implicant_clause == -1){
 		//Esta variable es toggled.
-		variable_array[i].toggled = 1;
+		//variable_array[i].toggled = 1;
 		variable_array[i].state = (variable_array[i].state == 1 ? 0 : 1);
 		//Indice de la nueva variable asignada, lista para propagar.
 		return i;
@@ -576,14 +558,14 @@ int dpll (){
 	a = decide_next_branch();
 	//initializeDecisionVariable(a);
 	if(a != -1){
-	    printf("Entro con: %d\n",a);
+	    printf("Variable de decision, value: %d,%d\n",a,variable_array[a].state);
 	    while(deduce(a) == 0){
 		blevel = analyze_conflict();
 		if(blevel == 0)
 		    return 0;
 		else{
 		    a = backtrack(blevel);
-		    printf("blevel: %d dec: %d\n(a,imp_clause):(%d,%d)\n",blevel,d,a,igraph[a].implicant_clause);
+		    printf("blevel: %d dec: %d\nvalue: %d (a,imp_clause):(%d,:%d)\n",blevel,d,variable_array[a].state,a,igraph[a].implicant_clause);
 		}
 	    }
 	}
