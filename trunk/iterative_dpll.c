@@ -157,6 +157,8 @@ int main(void){
 	    }
 	}
     }
+
+    d = D;
     //    printf("out\n");
     if(resolved != 1){
 	printf("%d\n",dpll()); 
