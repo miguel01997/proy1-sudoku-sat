@@ -1,74 +1,41 @@
+/**********************************************************
+iterative_dpll.h
+
+@author Alex Tough (07-41604)
+@author Daniel Bruzual (07-40681)
+
+Implementa el algoritmo DPLL iterativa, empleando
+para el mecanismo de analisis de conflictos backtracking
+no cronologico y aprendizaje de clausulas, siguiendo
+el modelo propuesto en marques-silva96grasp.pdf
+
+************************************************************/
+
+//Tamano maximo de una clausula aprendida
 #define MAXSIZELEARNEDCLAUSE 20
 #define ABS(a) (a>0 ? a : -a)
 #include <stdio.h>
 #include <stdlib.h>
 #include "data_structures.h"
-/**
-  * Determina si una instancia de SAT es satisfacible mediante
-  * la aplicacion del algoritmo DPLL iterativo. 
-  * 
-  * @param clause_array Lista indexada de clausulas de la instancia
-  *
-  * @param variable_array Lista indexada de variables de la instancia
-  *
-  * @param igraph Arreglo de nodos del grafo de implicacion
-  *
-  * @param C Tamano de la lista de clausulas
-  * 
-  * @param V Tamano de la lista de variables y del arreglo de nodos
-  *  
-*/
 
 //Nivel de decision actual
-int d,C,V,T,D,X;
-//Nodo de decision actual
+int d;
+//Cantidad de clausulas no aprendidas
+int C;
+//Cantidad de variables
+int V;
+//Cantidad de clausulas totales
+int T;
+//Nivel de decision maximo del preprocesamiento
+int D;
+//Clausula de conflicto
 clause conflict_clause;
+//Lista de clausulas
 clause* clause_array;
+//Lista de variables
 variable* variable_array;
+//Arreglo de nodos del grafo de implicacion
 igraph_node* igraph;
-
-
-int satisfiable()
-{	int i,j;
-	int true_count;
-	int false_count;
-	int var_pos;
-	true_count = 0;
-	false_count = 0;
-	for(i=1;i<T;i++)
-	{	clause* c = &clause_array[i];
-		false_count = 0;
-		for(j=0;j<c->literals.size;j++){   
-		    var_pos = ABS(c->literals.array[j]);
-		    if(variable_array[var_pos].state == 0 
-			&& c->literals.array[j] > 0)
-			    false_count += 1;   			
-		    if(variable_array[var_pos].state == 1 
-			&& c->literals.array[j] < 0)
-			    false_count += 1;    
-		    //At least one variable is true
-		    if(variable_array[var_pos].state == 1
-			&& c->literals.array[j] > 0)
-			break;
-		    if(variable_array[var_pos].state == 0
-			&& c->literals.array[j] < 0)
-			break;
-		}
-		if(j < c->literals.size)
-		    true_count += 1;
-		
-		//one clause is completely false
-				
-		if(false_count == c->literals.size)
-		    return 0;
-		
-	}	
-	if(true_count == T)
-	    return 1;
-
-	return -1;
-}
-
 
 /**
  * Actualiza la lista de clausulas W con una clausula 
@@ -134,12 +101,10 @@ int decide_next_branch(){
  * @param assigned Nodo de decision
  *
  * @return 0 En caso de conflicto
- *         1 En cualquier caso
+ *         1 En cualquier otro caso
  *
 */
-
 int deduce(int assigned){
-    printf("assigned: %d\n",assigned);
     int i,flag_true,flag_update,value_assigned;
     int j,k,fc,state_w1,which_val,which_watched;
     int which_watched_abs,w1,w2,true_count;
@@ -225,7 +190,7 @@ int deduce(int assigned){
 	    }
 	    //3.Agregar c a la lista de watchers de new_watched_literals
 	    if(c->literals.array[new_watched_literal] > 0){
-		addClause(&variable_array[ABS(c->literals.array[new_watched_literal])].pW,f); 
+		if(addClause(&variable_array[ABS(c->literals.array[new_watched_literal])].pW,f)==-1); 
 	    }
 	    if(c->literals.array[new_watched_literal] < 0){
 		addClause(&variable_array[ABS(c->literals.array[new_watched_literal])].nW,f); 
@@ -257,7 +222,6 @@ void create_conflict_induced_clause(int index){
     rep_flag = 0;
     igraph_node m = igraph[ABS(index)];
     if(m.implicant_clause == -1){
-	//printf("(Index,toggled,ic_clause,decision_level): (%d,%d,%d,%d)\n",index,variable_array[ABS(index)].toggled,igraph[ABS(index)].implicant_clause,igraph[ABS(index)].decision_level);
 	for(j=0;j<conflict_clause.literals.size;j++){
 	    if(ABS(index) == ABS(conflict_clause.literals.array[j])){
 		rep_flag = 1;
@@ -299,19 +263,18 @@ void create_conflict_induced_clause(int index){
  *
  * @param conflict_clause Clausula de conflicto
  *
- * @param blevel Nivel de backjumping
+ * @param blevel Nivel de backtracking no cronologico
  *
- * @param w1 Posicion de la variable con mas alto nivel de decision.
+ * @param w1 Posicion de la variable con mas alto nivel de decision
  *
  * @param w2 Posicion de la variable con el segundo mas alto nivel
- *           de decision.
+ *           de decision
  *
  */
 void compute_max_decision_level(clause conflict_clause,int* blevel, int* w1,int* w2){
     igraph_node p;
     int j,q,b;
     int teta = -2;
-    //w1 es asociado a blevel, w2 es asociado a b.
     b = -2;
     *blevel = -2;
     *w1 = -2;
@@ -335,7 +298,7 @@ void compute_max_decision_level(clause conflict_clause,int* blevel, int* w1,int*
 	}	
     }
     if(*blevel ==d){    
-      *blevel = teta;
+	*blevel = teta;
     }
     //Hemos llegado a la raiz del arbol preprocesada y ya fue toggled.
     if(*blevel < D){
@@ -391,18 +354,20 @@ void compaq(){
     T -= shift;
 }
 
-
+/**
+ * Guarda la clausula aprendida en el arreglo de clausulas.
+*/
 void saveLearnedClause(){
-  int j;
-  clause_array[T] = conflict_clause;
-  clause_array[T].literals.array = (int *) malloc(conflict_clause.literals.size*sizeof(int));
-  if(clause_array[T].literals.array == NULL){
-    printf("Out of memory.\n");
-    exit(1);
-  }
-  for(j = 0; j < conflict_clause.literals.size; j++){
-    clause_array[T].literals.array[j] = conflict_clause.literals.array[j];
-  }
+    int j;
+    clause_array[T] = conflict_clause;
+    clause_array[T].literals.array = (int *) malloc(conflict_clause.literals.size*sizeof(int));
+    if(clause_array[T].literals.array == NULL){
+	printf("Out of memory.\n");
+	exit(1);
+    }
+    for(j = 0; j < conflict_clause.literals.size; j++){
+	clause_array[T].literals.array[j] = conflict_clause.literals.array[j];
+    }
 }
 
 
@@ -418,26 +383,22 @@ int analyze_conflict(){
     int blevel,w1,w2;
     rarray_clause* wlist1;
     rarray_clause* wlist2;
-    X = 0;
     conflict_clause.tag = 0;
     conflict_clause.w_1_i = 0;
     conflict_clause.w_2_i = 0;
     conflict_clause.literals.size = 0;
     conflict_clause.literals.array = NULL;
+
+    //Crear clausula de conflicto
     create_conflict_induced_clause(0);
 
+    //Etiquetar clausula segun sea el caso
     conflict_clause.tag = (conflict_clause.literals.size 
 	    > MAXSIZELEARNEDCLAUSE ? 1:0);
-    compute_max_decision_level(conflict_clause,&blevel,&w1,&w2);
-    int r;
-    printf("learned clause: ");
-    for(r = 0; r< conflict_clause.literals.size; r++){
-	printf("(%d,%d,%d,%d)   ",conflict_clause.literals.array[r], igraph[ABS(conflict_clause.literals.array[r])].decision_level,igraph[ABS(conflict_clause.literals.array[r])].implicant_clause,variable_array[ABS(conflict_clause.literals.array[r])].state);
-    }
-    printf("\n");
-    printf("w1:%d   w2:%d\n",w1,w2);
-    printf("blevel: %d\n", blevel);
 
+    //Calcular nivel de backtracking
+    compute_max_decision_level(conflict_clause,&blevel,&w1,&w2);
+    
     //Mantenimiento de literales observados
     if(blevel == 0)
 	return 0;
@@ -451,10 +412,16 @@ int analyze_conflict(){
     else
 	wlist2 = &(variable_array[ABS(conflict_clause.literals.array[w2])].nW);
 
-    //No considerar clausulas unitarias de conflicto
- 
-    if(conflict_clause.literals.size > 1 && T <= 2*C){
-	X = 1;
+    if(conflict_clause.literals.size == 1 && T <=2*C){
+	variable_array[ABS(conflict_clause.literals.array[0])].toggled = 1;
+	addClause(wlist1,T);
+	addClause(wlist2,T);
+	conflict_clause.w_1_i = w1;
+	conflict_clause.w_2_i = w2; 
+	saveLearnedClause();
+	T += 1;
+    }
+    else if(conflict_clause.literals.size > 1 && T <= 2*C){
 	addClause(wlist1,T);
 	addClause(wlist2,T);
 	conflict_clause.w_1_i = w1;
@@ -481,10 +448,9 @@ int backtrack(int blevel){
     rarray_clause* clist;
 
     //Eliminar las clausulas costosas.
-    /*for(j=C+1;j<T;j++){
+    for(j=C+1;j<T;j++){
 	if(clause_array[j].tag == 1){
-	    if(variable_array[ABS(clause_array[j].literals.array[clause_array[j].w_1_i])].state == -1 &&
-		    variable_array[ABS(clause_array[j].literals.array[clause_array[j].w_2_i])].state == -1 ){
+	    if(variable_array[ABS(clause_array[j].literals.array[clause_array[j].w_1_i])].state == -1 && variable_array[ABS(clause_array[j].literals.array[clause_array[j].w_2_i])].state == -1 ){
 		//Actualizar watchers.
 		clist = &(variable_array[ABS(clause_array[j].literals.array[clause_array[j].w_1_i])].pW);
 		for(k=0;k<clist->size;k++){
@@ -519,47 +485,37 @@ int backtrack(int blevel){
 	    }
 	}
     }
-    */
 
-    //compaq();
+    compaq();
 
     //Fail Driven Assertions
     if(blevel == d){
 	//Borrar implicados de nivel de decision d.
 	for(i = 1; i<= V;i++){
 	    if(igraph[i].decision_level == d && igraph[i].implicant_clause != -1){
-		//igraph[i].decision_level = -1;
 		//-2 quiere decir que no tiene clausula
 		//implicante asignada. Esto NO es lo mismo
 		//que una variable de decision.
 		igraph[i].implicant_clause = -2;
 		igraph[i].decision_level = -1;
 		variable_array[i].state = -1;
-		variable_array[i].toggled = 0;
 		//los watchers no necesitan ser actualizados.
 	    }	
 	}
 	for(i = 1; i<= V;i++){
-	    if(igraph[i].decision_level == d && igraph[i].implicant_clause == -1 && X == 1){
+	    if(igraph[i].decision_level == d && igraph[i].implicant_clause == -1){
 		//Fail driven assertion no es raiz, es implicado por la clausula
 		//de conflicto (deducido automaticamente por deduce()).
 		//Vamos a probar el manejo explicito de los FDAs.
 		//En este caso, clausulas marcadas de rojo no seran eliminados.
 		igraph[i].implicant_clause = T-1;
 		variable_array[i].state = (variable_array[i].state == 1 ? 0 : 1);
-
 		return i;
-	    }
-	    else if(igraph[i].decision_level == d && igraph[i].implicant_clause == -1 && X == 0){
-		variable_array[i].state = (variable_array[i].state == 1 ? 0 : 1);
-		variable_array[i].toggled = 1;
-		return i;
-	    }
-
+	    } 
 	}
     }
     else{
-	//Borrar implicados de nivel de decision d.
+	//Borrar implicados de nivel de decision mayor o igual que blevel.
 	for(i = 1; i<= V;i++){
 	    if(igraph[i].decision_level == blevel && igraph[i].implicant_clause == -1){
 		continue;
@@ -579,18 +535,12 @@ int backtrack(int blevel){
 	//Voy a saltar al nodo que es raiz del arbol (escoge uno)
 	//y que tiene el nivel de decision mas alto (blevel).
 	for(i = 1; i<= V;i++){
-	    if(igraph[i].decision_level == blevel && igraph[i].implicant_clause == -1 && X == 1){
+	    if(igraph[i].decision_level == blevel && igraph[i].implicant_clause == -1){
 		//Esta variable es toggled.
 		//variable_array[i].toggled = 1;
 		igraph[i].implicant_clause = T - 1;
 		variable_array[i].state = (variable_array[i].state == 1 ? 0 : 1);
-	
 		//Indice de la nueva variable asignada, lista para propagar.
-		return i;
-	    }
-	    else if(igraph[i].decision_level == blevel && igraph[i].implicant_clause == -1 && X == 0){
-		variable_array[i].state = (variable_array[i].state == 1 ? 0 : 1);	
-		variable_array[i].toggled = 1;
 		return i;
 	    }
 	}
@@ -609,6 +559,9 @@ void initializeDecisionVariable(int var){
     igraph[var].implicant_clause = -1;
 }
 
+/**
+ * Imprime las asignaciones de las variables
+*/
 void printAssignments()
 {   int i;
     for(i=1;i <= V;i++){
@@ -621,57 +574,26 @@ void printAssignments()
 
 }
 
-void printClauses(){
-    int i,j;
-    for(i=0;i<T;i++){
-	printf("Clause %d: ",i);
-	for(j=0;j<clause_array[i].literals.size;j++){
-	    printf("(%d,%d) ",clause_array[i].literals.array[j],variable_array[ABS(clause_array[i].literals.array[j])].state);
-	}
-	printf("\n");
-    }
-}
-
+/**
+ * Determina si una instancia de SAT es satisfacible mediante
+ * la aplicacion del algoritmo DPLL iterativo. 
+ * 
+ */
 int dpll (){
     int status,blevel,a;
-    /*while(1){
-      a = decide_next_branch();
-      printf("root: %d\n",a);
-      while(1){
-      status = deduce(a);
-      if(status == 0){
-      blevel = analyze_conflict();
-      if(blevel == 0)
-      return 0;
-      else
-      a = backtrack(blevel); 
-      }
-      else if(status == 1)
-      return 1;		
-      else{
-      d += 1;
-      break;
-      }
-      }  
-      }*/
-
-    printf("D: %d\n",D);
     while(1){
 	a = decide_next_branch();
 	if(a != -1){
-	    printf("(Variable de decision, level): (%d,%d)\n",a,igraph[ABS(a)].decision_level);
 	    while(deduce(a) == 0){
 		blevel = analyze_conflict();
 		if(blevel == 0)
 		    return 0;
 		else{
 		    a = backtrack(blevel);
-		    printf("(a,value,imp_clause):(%d,%d,%d)\n",a,variable_array[a].state,igraph[a].implicant_clause);
 		}
 	    }
 	}
 	else{
-	    printClauses();
 	    printAssignments();
 	    return 1;
 	}
