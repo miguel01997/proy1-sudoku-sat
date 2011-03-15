@@ -139,6 +139,7 @@ int decide_next_branch(){
 */
 
 int deduce(int assigned){
+    printf("assigned: %d\n",assigned);
     int i,flag_true,flag_update,value_assigned;
     int j,k,fc,state_w1,which_val,which_watched;
     int which_watched_abs,w1,w2,true_count;
@@ -176,7 +177,7 @@ int deduce(int assigned){
     		pos = k;
 	    } 
 	    //se puede mover el literal observado.
-	    if(literal_state != 0 && k != c->w_1_i && k != c->w_2_i){
+	    if(((literal > 0 && literal_state != 0) || (literal < 0 && literal_state != 1)) && k != c->w_1_i && k != c->w_2_i){
 		new_watched_literal = k;
 		break;
 	    }
@@ -456,7 +457,7 @@ int backtrack(int blevel){
     rarray_clause* clist;
 
     //Eliminar las clausulas costosas.
-    for(j=C+1;j<T;j++){
+    /*for(j=C+1;j<T;j++){
 	if(clause_array[j].tag == 1){
 	    if(variable_array[ABS(clause_array[j].literals.array[clause_array[j].w_1_i])].state == -1 &&
 		    variable_array[ABS(clause_array[j].literals.array[clause_array[j].w_2_i])].state == -1 ){
@@ -494,8 +495,9 @@ int backtrack(int blevel){
 	    }
 	}
     }
+    */
 
-    compaq();
+    //compaq();
 
     //Fail Driven Assertions
     if(blevel == d){
