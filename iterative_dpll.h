@@ -267,6 +267,7 @@ void create_conflict_induced_clause(int index){
 	if(rep_flag != 1){
 	    conflict_clause.literals.size += 1;
 	    conflict_clause.literals.array = realloc(conflict_clause.literals.array,conflict_clause.literals.size*sizeof(int));
+
 	    if(conflict_clause.literals.array == NULL){
 		printf("Out of memory. Sorry.");
 		exit(1);
@@ -382,6 +383,21 @@ void compaq(){
     T -= shift;
 }
 
+
+void saveLearnedClause(){
+  int j;
+  clause_array[T] = conflict_clause;
+  clause_array[T].literals.array = (int *) malloc(conflict_clause.literals.size*sizeof(int));
+  if(clause_array[T].literals.array == NULL){
+    printf("Out of memory.\n");
+    exit(1);
+  }
+  for(j = 0; j < conflict_clause.literals.size; j++){
+    clause_array[T].literals.array[j] = conflict_clause.literals.array[j];
+  }
+}
+
+
 /**
  * Calcula el nivel del backtracking (backjumping en el caso 
  * no cronologico). Realiza aprendizaje de clausulas para limitar 
@@ -435,7 +451,7 @@ int analyze_conflict(){
 	addClause(wlist2,T);
 	conflict_clause.w_1_i = w1;
 	conflict_clause.w_2_i = w2; 
-	clause_array[T] = conflict_clause;
+	saveLearnedClause();
 	T += 1;
     }
 
