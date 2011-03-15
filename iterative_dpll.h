@@ -310,6 +310,7 @@ void create_conflict_induced_clause(int index){
 void compute_max_decision_level(clause conflict_clause,int* blevel, int* w1,int* w2){
     igraph_node p;
     int j,q,b;
+    int teta = -2;
     //w1 es asociado a blevel, w2 es asociado a b.
     b = -2;
     *blevel = -2;
@@ -323,11 +324,18 @@ void compute_max_decision_level(clause conflict_clause,int* blevel, int* w1,int*
 	    *blevel = p.decision_level;
 	    *w1 = j;
 	    q = ABS(conflict_clause.literals.array[j]);
+
+	}
+	if(p.decision_level > teta && variable_array[ABS(conflict_clause.literals.array[j])].toggled != 1){
+	  teta = p.decision_level;
 	}
 	if(p.decision_level > b && p.decision_level < *blevel){
 	    b = p.decision_level;
 	    *w2 = j;
 	}	
+    }
+    if(*blevel ==d){    
+      *blevel = teta;
     }
     //Hemos llegado a la raiz del arbol preprocesada y ya fue toggled.
     if(*blevel < D){
@@ -527,6 +535,7 @@ int backtrack(int blevel){
 		igraph[i].implicant_clause = -2;
 		igraph[i].decision_level = -1;
 		variable_array[i].state = -1;
+		variable_array[i].toggled = 0;
 		//los watchers no necesitan ser actualizados.
 	    }	
 	}
@@ -538,10 +547,12 @@ int backtrack(int blevel){
 		//En este caso, clausulas marcadas de rojo no seran eliminados.
 		igraph[i].implicant_clause = T-1;
 		variable_array[i].state = (variable_array[i].state == 1 ? 0 : 1);
+
 		return i;
 	    }
 	    else if(igraph[i].decision_level == d && igraph[i].implicant_clause == -1 && X == 0){
 		variable_array[i].state = (variable_array[i].state == 1 ? 0 : 1);
+		variable_array[i].toggled = 1;
 		return i;
 	    }
 
@@ -573,11 +584,13 @@ int backtrack(int blevel){
 		//variable_array[i].toggled = 1;
 		igraph[i].implicant_clause = T - 1;
 		variable_array[i].state = (variable_array[i].state == 1 ? 0 : 1);
+	
 		//Indice de la nueva variable asignada, lista para propagar.
 		return i;
 	    }
 	    else if(igraph[i].decision_level == blevel && igraph[i].implicant_clause == -1 && X == 0){
 		variable_array[i].state = (variable_array[i].state == 1 ? 0 : 1);	
+		variable_array[i].toggled = 1;
 		return i;
 	    }
 	}
